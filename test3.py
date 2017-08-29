@@ -25,6 +25,10 @@ from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from BeautifulSoup import BeautifulSoup
 
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
 reload(sys)
 sys.setdefaultencoding('utf8')
 
@@ -47,7 +51,7 @@ project_name = "lactobacillus"  # 项目的名字
 
 # 实例内部设定
 # sum_page_number = math.ceil(record_number / 20)  # 每页20个，计算共多少页
-sum_page_number = 3
+sum_page_number = 4 # sum-page总数，用phantomjs爬的，是这个数-1
 url = "https://www.ncbi.nlm.nih.gov/pubmed/?term=" + key_words.replace(",", "+") # 最初的查询网址
 
 # 实例内部容器
@@ -64,112 +68,51 @@ output_msg = []  # 用于输出的信息json
 
 record = [] # 用于数据临时存储； 不清空，可无限添加
 
-# def generate_record(self): # 从抓取的原始素材产生记录
-#     m = 0
-#     n = 0
-#     title_start_with = "linksrc=docsum_title\">"#标记查找标题开头
-#     title_end_with = "</a>"#查找标题的结尾
-#     journal_start_with = 'title='#查找期刊开头
-#     journal_end_with = '\">'#查找期刊结尾
-#     for m in range(len(content)):  # 有多少重复多少
-#         author[m] = str(author[m])[16:-4]  # 作者
-#         journal_end = str(journal[m]).find(journal_end_with)
-#         journal[m] = str(journal[m])[26:journal_end].replace('<b>', '').replace('</b>', '')  # 期刊
-#         pmid[m] = str(pmid[m])[4:-5]  # pmid
-#         title_start = str(title[m]).find(title_start_with) + 22
-#         title[m] = str(title[m])[title_start:-8].replace('<b>', '').replace('</b>', '')  # 论文名
-#         issue[m] = re.search("[1-2][09][0-9]{2}", str(issue[m])).group(0)  # 刊号
-#         if not(check_pmid(pmid[m])): # 如果之前没有这篇文章
-#             abstract = crawl_abstract_page(pmid[m]) # 获取abstract
-#             if abstract: # 如果能够返回正确的abstract，记录；否则留给下一次抓取（不记录，视作新论文）
-#             record = author[m],issue[m],pmid[m],title[m],journal[m],abstract[0],abstract[1] #这里的abstract[0]是这篇文章的abstract,abstract[1]是全文下载的链接合集
-#             data_write(record,project_name,"data") # 录入数据文件
-#             pmid_write(pmid[m],project_name,"history") # 录入历史文件
-#             n += 1  # 记录多少篇新文章
-#             print u"  New: " + str(title[m])  # 录入
-#             time.sleep(5)
-#         else:
-#             print u" ○ Skipped NO." + str(m+1) + u": Already retrieved"
-#     print u"  Retrieved " + str(n) + u" new articles"
-
-time_out = 10
-tries_1 = 2
-tries_2 = 3
+time_out = 15 # 页面加载时间，预定15秒
+tries_first_sum_page = 2 # 尝试获取第一个页面的次数
+tries_other_sum_page = 3 # 尝试获取其它每个页面的次数
 dcap = dict(DesiredCapabilities.PHANTOMJS)  # 设置userAgent
 dcap["phantomjs.page.settings.userAgent"] = (headers)  # header未来可以写成一个大集合，随机的
 dcap["phantomjs.page.settings.loadImages"] = False  # 不载入图片，以加快速度
 obj = webdriver.PhantomJS(executable_path='C:\Python27\Scripts\phantomjs.exe', desired_capabilities=dcap)  # 加载浏览器
 obj.set_page_load_timeout(time_out)  # 设定网页加载超时,超过了就不加载
 # obj.set_window_size('1024', '1280')  # 设定虚拟浏览器窗口大小
-while(tries_1 > 0):
+while (tries_first_sum_page > 0):
     try:
         obj.get(url)
-        soup = BeautifulSoup(obj.page_source)
-        doc = soup.findAll(name="div", attrs={"class": "rslt"})
-        content.append(doc)
-        
-        print "first sum-page"
-        print len(content)
-        obj.save_screenshot('page1.png')
+        # WebDriverWait(obj, 10).until(EC.presence_of_element_located((By.ID, "NCBIFooter_dynamic")))
         break
     except Exception as e:
-        print e
+        # print e
         print "Retrying loading first sum page"
-        tries_1 -= 1
+        tries_first_sum_page -= 1
 
-if tries_1 == 0:
+if tries_first_sum_page == 0:
     print "fail to read the first sum page"
 
-if len(content) != 0:
-    while(sum_page_number >0):
-        while(tries_2 >0):
-            try:
-                obj.find_element_by_link_text("Next >").click() #直接就点开“下一页”，从第二页开始
-                soup = BeautifulSoup(obj.page_source)
-                doc = soup.findAll(name="div", attrs={"class": "rslt"})
-                content.append(doc)
-                obj.save_screenshot('page'+str(3-sum_page_number)+'.png')
-                sum_page_number -= 1
-                break
-            except Exception as e:
-                print e
-                print "Retrying loading " + str(sum_page_number) + " page"
-                tries_2 -= 1
-        if tries_2 == 0:
+while(sum_page_number > 1):#确认需要第二页，如果sum-page只有1页，那就不用再打开
+    while(tries_other_sum_page > 0):#尝试多少次，默认尝试3次，不行就打不开
+        try:
+            obj.implicitly_wait(5)
+            obj.find_element_by_link_text("Next >").click() #直接就点开“下一页”，从第二页开始
+            # time.sleep(2)
+            print "start reading the other page"
+            soup = BeautifulSoup(obj.page_source)
+            doc = soup.findAll(name="div", attrs={"class": "rslt"})
+            content.append(doc)
+            obj.save_screenshot('page'+str(4-sum_page_number)+'.png')
+            sum_page_number -= 1
             break
-            print "Could not load page"
-
-obj.quit()
+        except Exception as e:
+            print e
+            print "Retrying loading " + str(4-sum_page_number) + " page"
+            time.sleep(5)
+            tries_other_sum_page -= 1
+        # finally:
+        #     obj.quit()
+    if tries_other_sum_page == 0:
+        break
+        print "Could not load page"
+obj.quit() # 关闭浏览器。当出现异常时记得在任务浏览器中关闭PhantomJS，因为会有多个PhantomJS在运行状态，影响电脑性能
 
 print len(content)
-print content
-    
-    # author = soup.findAll(name='p', attrs={"class": "desc"})  
-    # journal = soup.findAll(name="span", attrs={'class': 'jrnl'})  
-    # title = soup.findAll(name='p', attrs={"class": "title"})  
-    # issue = soup.findAll(name="p", attrs={'class': 'details'}) 
-    # pmid = soup.findAll(name="dd") 
-    
-
-
-# while(tries > 0):
-#     try:
-#         obj.get(url)  # 打开网址
-#         while(sum_page_number > 0):
-#             obj.find_element_by_link_text("Next >").click() #直接就点开“下一页”，从第二页开始
-#             soup = BeautifulSoup(obj.page_source)
-#             content.append.str(soup.findAll(name="div", attrs={"class": "rslt"})) 
-#             author = soup.findAll(name='p', attrs={"class": "desc"})  
-#             journal = soup.findAll(name="span", attrs={'class': 'jrnl'})  
-#             title = soup.findAll(name='p', attrs={"class": "title"})  
-#             issue = soup.findAll(name="p", attrs={'class': 'details'}) 
-#             pmid = soup.findAll(name="dd") 
-#             # generate_record() # 直接产生结果   
-#         break
-#     except Exception as e:
-#         print "Retry " + str(i) + " time"
-#         print e
-#         tries -= 1
-# if i == tries:
-#     print " Error: Cannot connect to the server"
-obj.quit()  # 关闭浏览器。当出现异常时记得在任务浏览器中关闭PhantomJS，因为会有多个PhantomJS在运行状态，影响电脑性能
