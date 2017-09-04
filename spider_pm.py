@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/env python
+
 """
 -------------------------------------------------
    File Name: spider_pm.py
@@ -17,7 +18,8 @@
    Change Log:
    2018-08-26: 重写所有蜘蛛，使用面相对象的办法
    2018-08-29：抓取方法改为采用phantomjs + selenium
-   2018-09-04: 把所有显示改写，改变模式
+   2018-09-03: 把所有显示改写，改变模式
+   2018-09-04: 重写抓取细节部分，机构可以抓取，关键词改为列表，修复csv空行
 -------------------------------------------------
 """
 
@@ -38,19 +40,6 @@ from BeautifulSoup import BeautifulSoup
 
 reload(sys)
 sys.setdefaultencoding('utf8')
-
-# header不要轻易该，反复测试后选择的
-headers = {'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
-           'Referer': "https://www.ncbi.nlm.nih.gov/pubmed",
-           "Connection": "keep-alive",
-           "Pragma": "max-age=0",
-           "Cache-Control": "no-cache",
-           "Upgrade-Insecure-Requests": "1",
-           "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/602.2.14 (KHTML, like Gecko) Version/10.0.1 Safari/602.2.14",
-           "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-           "Accept-Encoding": "gzip, deflate, sdch",
-           "Accept-Language": "en-US,zh-CN;q=0.8,zh;q=0.6"
-           }
 
 class Spider_pm:  # 爬虫的蜘蛛
     def __init__(self,project_name,key_words,record_number):
@@ -79,6 +68,19 @@ class Spider_pm:  # 爬虫的蜘蛛
         self.suc_count = 0 # 成功的数量
         self.skip_sum_page = 0 # 失败的页面数量
         self.skip_count = 0 # 失败的数量
+
+        # header不要轻易该，反复测试后选择的
+        self.headers = {'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+                'Referer': "https://www.ncbi.nlm.nih.gov/pubmed",
+                "Connection": "keep-alive",
+                "Pragma": "max-age=0",
+                "Cache-Control": "no-cache",
+                "Upgrade-Insecure-Requests": "1",
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/602.2.14 (KHTML, like Gecko) Version/10.0.1 Safari/602.2.14",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                "Accept-Encoding": "gzip, deflate, sdch",
+                "Accept-Language": "en-US,zh-CN;q=0.8,zh;q=0.6"
+                }
 
 #=====================================================================================
 # 以下是需要的小函数
@@ -122,7 +124,7 @@ class Spider_pm:  # 爬虫的蜘蛛
         return data_set
 
     def data_write(self, data, file_type):  # 所有储存都这样弄
-        with open(self.file_path(file_type), 'a') as csvfile:
+        with open(self.file_path(file_type), 'ab') as csvfile:
             data_writer = csv.writer(csvfile, dialect='excel')
             data_writer.writerow(data)
 
@@ -165,24 +167,35 @@ class Spider_pm:  # 爬虫的蜘蛛
 
     def crawl_detail(self, pmid):  # 爬具体页面
         link = "https://www.ncbi.nlm.nih.gov/pubmed/" + pmid
-        full_content_links = [] # 全文链接（不是abstract，是可下载的pdf）
-        full_links = [] # 原始全文链接的一个总集，需要处理到full_content_links里面
+        full_links_list = [] # 全文链接（不是abstract，是可下载的pdf）
+        institues_list = [] # 机构名称
+        key_words_list = [] # 关键词合集
+        # full_links_raw = [] # 原始全文链接的一个总集，需要处理到full_links_list里面
         tries = 3  # 尝试获取3次，不成功就返回错误
         while(tries > 0):
             try:
                 opener = requests.Session()
-                doc = opener.get(link, timeout=20, headers=headers).text
+                doc = opener.get(link, timeout=20, headers=self.headers).text
                 soup = BeautifulSoup(doc)
                 content = soup.findAll(name="abstracttext")
-                abstract = str(content)
-                institue = soup.findAll(name = 'dl', attrs={"class":"ui-ncbi-toggler-slave ui-ncbitoggler ui-ncbitoggler-slave-open"})
+                abstract = str(content)[15:-16]
+                institues_raw = soup.findAll(name = 'dl')
+                institues_raw =institues_raw[0]
+                institues_raw = re.findall("<dd>.*?</dd>", str(institues_raw))
+                if institues_raw: 
+                    for institues in institues_raw:
+                            institues_list.append(institues[4:-5])
+                # institue[0][34:-5]
                 full_content = soup.findAll(name='div', attrs={"class": "icons portlet"})
-                key_words = soup.findAll(name = "div", attrs={"class":"keywords"})
-                full_links = re.findall("<a href=.*?ref=", str(full_content))
-                if full_links:
-                    for full_link in full_links:
-                        full_content_links.append(full_link[9:-6].replace("&amp;", "&"))
-                return abstract, key_words, institue, full_content_links  # 返回的是一个值和一个集合
+                key_words_raw = soup.findAll(name = "div", attrs={"class":"keywords"})
+                key_words_raw = str(key_words_raw)[45:-11].replace("; ",";")
+                if key_words_raw:
+                    key_words_list = key_words_raw.split(';')
+                full_links_raw = re.findall("<a href=.*?ref=", str(full_content))
+                if full_links_raw:
+                    for full_link in full_links_raw:
+                        full_links_list.append(full_link[9:-6].replace("&amp;", "&"))
+                return abstract, key_words_list, institues_list, full_links_list  # 返回的是一个值和一个集合
                 break
             except Exception, e:
                 tries -= 1
@@ -216,7 +229,7 @@ class Spider_pm:  # 爬虫的蜘蛛
             try:
                 opener = requests.Session()
                 # opener.get(self.url, headers = headers)
-                raw = opener.get(self.url, timeout=20, headers=headers).text
+                raw = opener.get(self.url, timeout=20, headers=self.headers).text
                 if self.run_type:
                     self.project_sum()
                     print u"  INFO: Sum-page NO.1 is loaded in Requests. Total loaded: " + str(self.suc_sum_page + 1)
@@ -249,13 +262,13 @@ class Spider_pm:  # 爬虫的蜘蛛
 
     def crawl_phantom(self): # 用于使用phantomjs爬取sum-page，可以爬无限页，但是速度慢
         sum_page_number = self.sum_page_number
-        time_out = 30 # 页面加载时间，预定最多30秒
+        time_out = 60 # 页面加载时间，预定最多30秒
         tries_first_sum_page = 5 # 尝试获取第一个页面的次数
         dcap = dict(DesiredCapabilities.PHANTOMJS)  # 设置userAgent
-        dcap["phantomjs.page.settings.userAgent"] = (headers)  # header未来可以写成一个大集合，随机的
+        dcap["phantomjs.page.settings.userAgent"] = (self.headers)  # header未来可以写成一个大集合，随机的
         dcap["phantomjs.page.settings.loadImages"] = False  # 不载入图片，以加快速度
         browser = webdriver.PhantomJS(executable_path='C:\Python27\Scripts\phantomjs.exe', desired_capabilities=dcap)  # 加载浏览器
-        browser.set_page_load_timeout(time_out)  # 设定网页加载超时,超过了就不加载
+        browser.set_page_load_timeout(60)  # 设定网页加载超时,超过了就不加载
         if self.run_type:
             print "  INFO: Loading NO.1 sum-page in PhantomJS."
         while (tries_first_sum_page > 0):
@@ -273,6 +286,7 @@ class Spider_pm:  # 爬虫的蜘蛛
                     print "  NOTICE: Browser refreshed, wait for 5 secs to retry." 
                 browser.refresh()
                 browser.implicitly_wait(5)
+                # browser.save_screenshot("log.png")
         while(sum_page_number > 1 and tries_first_sum_page > 1):#确认需要第二页，如果sum-page只有1页，那就不用再打开
         # 从这里开始循环，直到所有的页面都爬完为止
             self.processed_sum_page += 1
@@ -318,5 +332,5 @@ class Spider_pm:  # 爬虫的蜘蛛
         self.crawl_phantom() # 爬剩下的所有页
 
 if __name__ == '__main__':
-    spider_test = Spider_pm("cancer", "liver,cancer", 40)
+    spider_test = Spider_pm("test", "skin,cancer", 50)
     spider_test.crawl_run()

@@ -138,6 +138,8 @@ class Output():
                 print "  Invalid choice, please select again"
                 continue
 
+    def run_menu(self):
+        
 
 
     def time_now(self): # 输出时间
