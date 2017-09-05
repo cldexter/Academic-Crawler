@@ -332,5 +332,5 @@ class Spider_pm:  # 爬虫的蜘蛛
         self.crawl_phantom() # 爬剩下的所有页
 
 if __name__ == '__main__':
-    spider_test = Spider_pm("test", "skin,cancer", 50)
+    spider_test = Spider_pm("cancer", "ovarian,cancer", 5000)
     spider_test.crawl_run()
