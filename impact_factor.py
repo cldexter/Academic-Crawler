@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/env python
+# coding:utf-8
 """
 -------------------------------------------------
    File Name: data_operate.py
@@ -18,7 +19,7 @@
 -------------------------------------------------
 """
 
-from __future__ import division # python除法变来变去的，这句必须放开头
+from __future__ import division  # python除法变来变去的，这句必须放开头
 import time
 import sys
 import math
@@ -26,6 +27,9 @@ import json
 import requests
 import re
 import csv
+from lxml import etree
+from BeautifulSoup import BeautifulSoup
+import data_handler as dh
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -43,20 +47,19 @@ headers = {'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
            }
 
 run_type = 1
-
-search_str = {"Name": "Value",
-              "searchname": "Nature Protocols",
-              "searchissn": "",
-              "searchfield": "",
-              "searchimpactlow": "",
-              "searchimpacthigh": "",
-              "searchscitype": "",
-              "view": "search",
-              "searchcategory1": "",
-              "searchcategory2": "",
-              "searchjcrkind": "",
-              "searchopenaccess": "",
-              "searchsort": "relevance"}
+search_str = {
+    "searchname": "journal_name",
+    "searchissn": "",
+    "searchfield": "",
+    "searchimpactlow": "",
+    "searchimpacthigh": "",
+    "searchscitype": "",
+    "view": "search",
+    "searchcategory1": "",
+    "searchcategory2": "",
+    "searchjcrkind": "",
+    "searchopenaccess": "",
+    "searchsort": "relevance"}
 
 # 查找杂志的全名
 def search_full_name(journal_name):
@@ -67,28 +70,40 @@ def search_full_name(journal_name):
         try:
             opener = requests.Session()
             doc = opener.get(url, timeout=20, headers=headers).text
-            return doc
+            list = dh.list_generate(doc, "},{", "{", "}")
+            return list
             break
         except Exception, e:
             if run_type:
                 print "  ERROR: No matching journal name"
                 print e
-            tries -= 0
-    
-def search_jornal_detail():
+            tries -= 1
+
+
+def search_jornal_detail(journal_name):
     url = "http://www.letpub.com.cn/index.php?page=journalapp&view=search"
     tries = 2
     while(tries > 0):
         try:
             opener = requests.Session()
-            doc = opener.post(url, data = search_str).text
-            print doc
+            doc = opener.post(url, data=search_str).text
+            soup = BeautifulSoup(doc)
+            print soup
+            table = soup.findAll(name="td", attrs={
+                                 "style": "border:1px #DDD solid; border-collapse:collapse; text-align:left; padding:8px 8px 8px 8px;"})
+
+            print table
+            re_label = re.compile("</?\w+[^>]*>")
+            text = re_label.sub("", str(table)).split(', ')
+            impact_factor = text[2]
+            publication_zone = text[3][0]
+            return impact_factor, publication_zone
             break
-        except expression as identifier:
-            pass
-            tries -= 0
+        except Exception as identifier:
+            if run_type:
+                print identifier
+            tries -= 1
+
 
 if __name__ == '__main__':
-    # search_jornal_detail()
-    print search_full_name("NAT PROTOC")
-    
+    search_jornal_detail("nature")

@@ -61,6 +61,14 @@ def text_write(data, project_name, file_type):
     with open(file_name(project_name, file_type), "ab+") as f:
         f.write(data + ',')
 
+def list_generate(str_for_list, dilimiter, dilimiter_left, dilimiter_right):
+    list = []
+    list_raw = str_for_list.split(dilimiter)
+    for item in list_raw:
+        item = item.replace(dilimiter_left,"").replace(dilimiter_right,"")
+        list.append(','.join(item))
+    return list
+
 if __name__ == '__main__':
     print file_name("cancer", "data")
 

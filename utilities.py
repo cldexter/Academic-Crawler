@@ -16,6 +16,8 @@
 -------------------------------------------------
 """
 
+import time
+
 def time_now():  # 输出时间
     ISOTIMEFORMAT = '%Y-%m-%d %X'  # 设定了时间格式
     return time.strftime(ISOTIMEFORMAT, time.localtime())
