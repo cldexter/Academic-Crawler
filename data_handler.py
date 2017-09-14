@@ -2,7 +2,7 @@
 # !/usr/bin/env python
 """
 -------------------------------------------------
-   File Name: data_operate.py
+   File Name: data_handler.py
    Description: 所有数据读取的操作，不涉及数据变换
    Author: Dexter Chen
    Date：2017-09-09
@@ -12,7 +12,7 @@
    2. 判断文件类型
 -------------------------------------------------
    Change Log:
-   2018-09-09: 
+   2018-09-14: 复活，把operator改为handler 
 -------------------------------------------------
 """
 from __future__ import division # python除法变来变去的，这句必须放开头
@@ -42,6 +42,7 @@ def file_name(project_name,file_type):#用于查询当前的文件位置和名�
         return path+project_name+"_key_words.csv"
     else:
         return u" ○ Error: Wrong file type"
+
 # 通用读取
 def data_read(project_name,file_type):#所有读取都用这个
     data_set = []
@@ -56,10 +57,10 @@ def data_write(data,project_name,file_type):#所有储存都这样弄
         data_writer = csv.writer(csvfile, dialect='excel')
         data_writer.writerow(data)
 
-def text_read(project_name,file_type):#读取pmid库，自动关闭文件
+def text_read(project_name,file_type):
     with open(file_name(project_name,file_type),'rb') as f:
-        pmid_set = f.read()
-    return pmid_set
+        text = f.read()
+    return text
 
 def text_write(data,project_name,file_type):#存入pmid,自动关闭文件
     with open(file_name(project_name,file_type),"ab+") as f:
