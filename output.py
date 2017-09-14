@@ -142,10 +142,6 @@ class Output():
     def run_menu(self):
         pass        
 
-
-    def time_now(self): # 输出时间
-        ISOTIMEFORMAT = '%Y-%m-%d %X' #设定了时间格式
-        return time.strftime(ISOTIMEFORMAT, time.localtime())
         
 
 if __name__ == '__main__':

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/env python
-
 """
 -------------------------------------------------
    File Name: spider_pm.py
@@ -148,8 +147,7 @@ class Spider_pm:  # 爬虫的蜘蛛
                 opener = requests.Session()
                 doc = opener.get(link, timeout=20, headers=self.headers).text
                 soup = BeautifulSoup(doc)
-                content = soup.findAll(name="abstracttext")
-                abstract = str(content)[15:-16]
+                abstract = soup.findAll(name="abstracttext")
                 institues_raw = soup.findAll(name='dl')
                 institues_raw = institues_raw[0]
                 institues_raw = re.findall("<dd>.*?</dd>", str(institues_raw))

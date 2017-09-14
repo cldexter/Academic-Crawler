@@ -36,7 +36,7 @@ def file_name(project_name, file_type):  # 用于查询当前的文件位置和�
         file_dir = path + project_name + path_dict.get(file_type)
         return file_dir
     except expression as identifier:
-        return return u" Error: Wrong file type"
+        return u" Error: Wrong file type"
 
 # 通用读取
 def csv_read(project_name, file_type):
@@ -60,3 +60,7 @@ def text_read(project_name, file_type):
 def text_write(data, project_name, file_type):
     with open(file_name(project_name, file_type), "ab+") as f:
         f.write(data + ',')
+
+if __name__ == '__main__':
+    print file_name("cancer", "data")
+
