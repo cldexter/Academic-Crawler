@@ -29,19 +29,19 @@ def cur_file_dir():  # 获取脚本路径
     return path
 
 def file_name(project_name, file_type):  # 用于查询当前的文件位置和名称
-    path_dict = {"history": "_history.txt", "data": "_data.csv", "data_temp": "_data_temp.csv", "data_tab_txt": "_data_tab_txt.txt"
+    path_dict = {"journal":"_journal.csv","history": "_history.txt", "data": "_data.csv", "data_temp": "_data_temp.csv", "data_tab_txt": "_data_tab_txt.txt"
                  }
     path = cur_file_dir() + "/" + project_name + "/"
     try:
         file_dir = path + project_name + path_dict.get(file_type)
         return file_dir
-    except expression as identifier:
+    except Expression as identifier:
         return u" Error: Wrong file type"
 
 # 通用读取
 def csv_read(project_name, file_type):
     data_set = []
-    with open(file_name(project_name, file_type), 'rb') as csvfile:
+    with open(file_name(project_name, file_type), 'rb+') as csvfile:
         data = csv.reader(csvfile, dialect='excel')
         for row in data:
             data_set.append(','.join(row))
