@@ -1,2 +1,0 @@
-(test,[dexter,chen]);
-(cancer,[liver,cancer,cure])
