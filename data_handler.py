@@ -9,10 +9,12 @@
 -------------------------------------------------
    Development Note：
    1. 判断文件路径
-   2. 判断文件类型
+   2. 根据文件类型，提取完整路径
+   3. 读取、写入数据
 -------------------------------------------------
    Change Log:
-   2018-09-14: 复活，把operator改为handler 
+   2017-09-14: 复活，把operator改为handler 
+   2017-09-16: 所有数据目录更改为data文件夹内
 -------------------------------------------------
 """
 from __future__ import division  # python除法变来变去的，这句必须放开头
@@ -31,7 +33,7 @@ def cur_file_dir():  # 获取脚本路径
 def file_name(project_name, file_type):  # 用于查询当前的文件位置和名称
     path_dict = {"journal":"_journal.csv","history": "_history.txt", "data": "_data.csv", "data_temp": "_data_temp.csv", "data_tab_txt": "_data_tab_txt.txt"
                  }
-    path = cur_file_dir() + "/" + project_name + "/"
+    path = cur_file_dir() + "/data/" + project_name + "/"
     try:
         file_dir = path + project_name + path_dict.get(file_type)
         return file_dir
@@ -60,14 +62,6 @@ def text_read(project_name, file_type):
 def text_write(data, project_name, file_type):
     with open(file_name(project_name, file_type), "ab+") as f:
         f.write(data + ',')
-
-def list_generate(str_for_list, dilimiter, dilimiter_left, dilimiter_right):
-    list = []
-    list_raw = str_for_list.split(dilimiter)
-    for item in list_raw:
-        item = item.replace(dilimiter_left,"").replace(dilimiter_right,"")
-        list.append(','.join(item))
-    return list
 
 if __name__ == '__main__':
     print file_name("cancer", "data")
