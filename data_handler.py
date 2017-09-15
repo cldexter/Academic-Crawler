@@ -31,8 +31,14 @@ def cur_file_dir():  # 获取脚本路径
     return path
 
 def file_name(project_name, file_type):  # 用于查询当前的文件位置和名称
-    path_dict = {"journal":"_journal.csv","history": "_history.txt", "data": "_data.csv", "data_temp": "_data_temp.csv", "data_tab_txt": "_data_tab_txt.txt"
-                 }
+    path_dict = {
+        "project": "_project.csv", 
+        "journal": "_journal.csv", 
+        "history": "_history.txt", 
+        "data": "_data.csv", 
+        "data_temp": "_data_temp.csv", 
+        "data_tab_txt": "_data_tab_txt.txt"
+    }
     path = cur_file_dir() + "/data/" + project_name + "/"
     try:
         file_dir = path + project_name + path_dict.get(file_type)
@@ -63,6 +69,21 @@ def text_write(data, project_name, file_type):
     with open(file_name(project_name, file_type), "ab+") as f:
         f.write(data + ',')
 
+def check_folders(project_name, file_type): # 检查某个文件夹是否在，不在回复False，在回复True
+    if file_type == "folder": # 检查文件夹在不在
+        path = path = cur_file_dir() + "/data/" + project_name + "/"
+    else: # 检测具体文件在不在
+        path = cur_file_dir() + "/data/" + project_name + "/" + project_name + file_name(project_name, file_type)
+    b = os.path.isdir(path)
+    return b
+
+def new_project_files(project_name):  # 生成文件夹以及原始文件：数据、历史、关键词
+    path = cur_file_dir() + "/data/" + project_name + "/"
+    os.mkdir(path)  # 根据path生成文件夹，下面生成所有项目所需文件
+    new_data_file = open(file_name(project_name, "data"), "w")
+    new_hisotry_file = open(file_name(project_name, "history"), 'w')
+    new_data_file.close()
+    new_hisotry_file.close()
+
 if __name__ == '__main__':
     print file_name("cancer", "data")
-
