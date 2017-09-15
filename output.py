@@ -142,8 +142,6 @@ class Output():
     def run_menu(self):
         pass        
 
-        
-
 if __name__ == '__main__':
     os.system('cls')
     dis = Output("test of message, hello world,here is more, more and more","safe")
