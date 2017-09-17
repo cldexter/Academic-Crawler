@@ -103,7 +103,7 @@ class Output():
     def time_box(self):# 把时间相关的列出来
         cPrint(u" ┌──────────┐ ┌──────────┐ ┌────────┐",self.color_code["default"])
         cPrint(u" │    Current Time    │ │     Start Time     │ │  Elapsed Time  │",self.color_code["default"])
-        cPrint(u" │" + self.time_now() + u" │ │" + self.time_now() + u" │ │" + "  ?? Hr ?? min " + u" │",self.color_code["default"])
+        cPrint(u" │" + self.time_str() + u" │ │" + self.time_str() + u" │ │" + "  ?? Hr ?? min " + u" │",self.color_code["default"])
         cPrint(u" └──────────┘ └──────────┘ └────────┘",self.color_code["default"])
 
     def project_box(self):

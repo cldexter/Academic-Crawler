@@ -21,12 +21,65 @@
 """
 import sys
 import os
+import thread
+from threading import Timer
+from datetime import date, datetime, timedelta
 import data_handler as dh
-import utilities
+import utilities as ut
 
 reload(sys)  
 sys.setdefaultencoding('utf8')
 
+class Watchdog: #看门狗程序，防止运行卡死 
+    def __init__(self):
+        ''' Class constructor. The "time" argument has the units of seconds. '''
+        self._time = maxPorcessTime
+        return   
+    def StartWatchdog(self):
+        ''' Starts the watchdog timer. '''
+        self._timer = Timer(self._time, self._WatchdogEvent)
+        self._timer.daemon = True
+        self._timer.start()
+        return    
+    def PetWatchdog(self):
+        ''' Reset watchdog timer. '''
+        self.StopWatchdog()
+        self.StartWatchdog()
+        return    
+    def _WatchdogEvent(self):
+        cPrint(u'\n ●调 等待太久，程序强制跳过 \n',COLOR.RED) 
+        self.StopWatchdog()
+        thread.interrupt_main()
+        return
+    def StopWatchdog(self):
+        ''' Stops the watchdog timer. '''
+        self._timer.cancel()
+
+def run_task(startTime, loopTime):  # 多少时间后开始运行
+    global currentTime, endTime, timeElapse  # 结束时间是全局的
+    currentTime = datetime.now()  # 刷新一下时间
+    nowTime = ut.time_str()
+    period = timedelta(seconds = loopTime)  # 定义循环间隔
+    if startTime == "":  # 开始时间
+        strStartTime = strNowTime
+    else:
+        strStartTime = startTime
+    runPeriod = timedelta(hours = runTime)
+    endTime = currentTime + runPeriod
+
+    niuniu = Watchdog()  # 生成看门狗
+
+    while True:  # 开始循环
+        currentTime = datetime.now()
+        strCurrentTime = currentTime.strftime('%Y-%m-%d %H:%M:%S')
+        timeElapse = currentTime - nowTime
+        if str(strCurrentTime) > str(strStartTime):  # 只要超过，就运行，不等于，因为往往运行滞后。此步骤增强稳定性
+            niuniu.StartWatchdog()  # 开始看门狗
+            Tasks()
+            nextTime = currentTime + period
+            strStartTime = nextTime.strftime('%Y-%m-%d %H:%M:%S')
+            niuniu.StopWatchdog()  # 喂看门狗
+            continue
 
 if __name__ == '__main__':
     print project_read()
