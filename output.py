@@ -29,6 +29,9 @@ from datetime import date, datetime, timedelta
 reload(sys)
 sys.setdefaultencoding('utf8')
 
+def output(info, info_type, created_time):
+    print created_time +"   "+ info_type +"   "+ info
+
 class Color: #打印颜色的定义，在这里做字典用
     BLACK = 0  
     BLUE = 1  
@@ -71,7 +74,7 @@ def cPrint(info,color): #实现彩色打印
     print info
     ctypes.windll.Kernel32.SetConsoleTextAttribute(h, Color.form) # 自动回复到银色
 
-class Output():
+class OP_screen():
     def __init__(self,info,info_type):#
         self.info = info
         self.info_type = info_type

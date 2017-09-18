@@ -19,14 +19,14 @@
 
 import datetime
 
-# 输出时间，带日期和不带; hr_delta 是往后数多少小时，负数往前数
-def time_str(type="full", hr_delta=0):  
+# 输出时间，带日期和不带; delta_hr 是往后数多少小时，负数往前数
+def time_str(type="full", delta_hr=0):  
     if type == "full":  # 完整时间
         time_format = '%Y-%m-%d %X'
     if type == "time":  # 只有时间
         time_format = "%X"
     time_str = datetime.datetime.now()
-    time = time_str + datetime.timedelta(hours=hr_delta)
+    time = time_str + datetime.timedelta(hours=delta_hr)
     return time.strftime(time_format)
 
 if __name__ == '__main__':

@@ -1,0 +1,3 @@
+breast,cancer
+liver,cancer
+brain,cancer

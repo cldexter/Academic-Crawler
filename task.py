@@ -18,39 +18,49 @@
    Change Log:
    2018-09-16: 
 -------------------------------------------------
+   格式：
+   task = 
+-------------------------------------------------
 """
 import sys
 import os
 import thread
 from threading import Timer
 from datetime import date, datetime, timedelta
+import project as pr
 import data_handler as dh
 import utilities as ut
 
-reload(sys)  
+reload(sys)
 sys.setdefaultencoding('utf8')
 
-class Watchdog: #看门狗程序，防止运行卡死 
+task = []
+
+class Watchdog:  # 看门狗程序，防止运行卡死
     def __init__(self):
         ''' Class constructor. The "time" argument has the units of seconds. '''
         self._time = maxPorcessTime
-        return   
+        return
+
     def StartWatchdog(self):
         ''' Starts the watchdog timer. '''
         self._timer = Timer(self._time, self._WatchdogEvent)
         self._timer.daemon = True
         self._timer.start()
-        return    
+        return
+
     def PetWatchdog(self):
         ''' Reset watchdog timer. '''
         self.StopWatchdog()
         self.StartWatchdog()
-        return    
+        return
+
     def _WatchdogEvent(self):
-        cPrint(u'\n ●调 等待太久，程序强制跳过 \n',COLOR.RED) 
+        cPrint(u'\n ●调 等待太久，程序强制跳过 \n', COLOR.RED)
         self.StopWatchdog()
         thread.interrupt_main()
         return
+
     def StopWatchdog(self):
         ''' Stops the watchdog timer. '''
         self._timer.cancel()
@@ -80,6 +90,15 @@ def run_task(startTime, loopTime):  # 多少时间后开始运行
             strStartTime = nextTime.strftime('%Y-%m-%d %H:%M:%S')
             niuniu.StopWatchdog()  # 喂看门狗
             continue
+
+def generate_task_list(project_name_list, delay, minimal_interval): # 
+    for project_name in project_name_list:
+        key_words = dh.text_read(dh.file_name(project_name),"key_words")
+
+
+
+
+
 
 if __name__ == '__main__':
     print project_read()
