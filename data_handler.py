@@ -32,10 +32,12 @@ def cur_file_dir():  # 获取脚本路径
 
 def file_name(project_name, file_type):  # 用于查询当前的文件位置和名称
     path_dict = {
-        "project": "_project.csv", 
+        "project": "_project.txt", 
         "journal": "_journal.csv", 
         "history": "_history.txt",
         "key_words":"_key_words.txt", 
+        "log":"_log.txt",
+        "stats":"stats.txt", # 统计文件
         "data": "_data.csv", 
         "data_temp": "_data_temp.csv", 
         "data_tab_txt": "_data_tab_txt.txt"

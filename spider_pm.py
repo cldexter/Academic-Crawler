@@ -113,7 +113,8 @@ class Spider_pm:  # 爬虫的蜘蛛
             if not(self.pmid_check(pmid)):  # 如果之前没有这篇文章
                 detail = self.crawl_detail(pmid)  # 获取abstract和全文链接
                 if detail:  # 如果能够返回正确的abstract，记录；否则留给下一次抓取（不记录，视作新论文）
-                    record = ut.time_str("full"), "|", self.project_name, "|", self.key_words, "|", pmid, "|", title, "|", journal, "|",  author, "|", issue, "|", detail[0], "|", detail[1], "|", detail[2], "|", detail[3]
+                    data = ut.time_str("full"), self.project_name, self.key_words, pmid, title, journal, author, issue, detail[0], detail[1], detail[2], detail[3]
+                    record = "|".join(data)
                     #这里的 detail[0]是这篇文章的abstract,[1]是keywords,[2]是机构列表 [4]是全文下载的链接合集
                     dh.csv_write(record, self.project_name, "data")  # 录入数据文件
                     dh.text_write(pmid, self.project_name, "history")  # 录入历史文件
@@ -138,7 +139,6 @@ class Spider_pm:  # 爬虫的蜘蛛
             try:
                 opener = requests.Session()
                 doc = opener.get(link, timeout=20, headers=agents.get_header()).text
-                print agents.get_header()['User-Agent']
                 # 注意，这里是不断随机换agent的
                 soup = BeautifulSoup(doc)
                 abstract = soup.findAll(name="abstracttext")

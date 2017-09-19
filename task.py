@@ -8,7 +8,8 @@
    Date：2017-09-16
 -------------------------------------------------
    Development Note：
-   1. 根据选择，确定程序执行时间（时间表）
+   1. 根据选择，确定需要执行的项目及细节
+   2. 根据之前的统计，确定
    2. 将制定好的时间表，放入csv文件
    3. 按照时间表执行
    4. 监控执行情况，实时统计
@@ -19,7 +20,7 @@
    2018-09-16: 
 -------------------------------------------------
    格式：
-   task = 
+   task:
 -------------------------------------------------
 """
 import sys
@@ -91,9 +92,11 @@ def run_task(startTime, loopTime):  # 多少时间后开始运行
             niuniu.StopWatchdog()  # 喂看门狗
             continue
 
-def generate_task_list(project_name_list, delay, minimal_interval): # 
+def generate_task_list(project_name_list, delay, minimal_interval): # 项目名称，第一个项目几小时后开始，项目间最小间隔
     for project_name in project_name_list:
         key_words = dh.text_read(dh.file_name(project_name),"key_words")
+        for key_word in key_words:
+            task = project_name, 
 
 
 

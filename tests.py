@@ -1,12 +1,5 @@
-import utilities as ut
-import time
 
-time1 = ut.time_str()
-time.sleep(0.5)
-time2 = ut.time_str()
+data = "dexter","hello","world"
+print "|".join(data)
+print type(data)
 
-def test():
-    if time1 < time2:
-        print "yes"
-
-test()
