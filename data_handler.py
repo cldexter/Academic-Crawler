@@ -69,7 +69,6 @@ def text_read(project_name, file_type):
     return text
 
 def text_write(data, project_name, file_type, write_way = "ab+"): # 默认是追加，可以用参数强制覆写
-    
     with open(file_name(project_name, file_type), write_way) as f:
         f.write(data + ',')
 

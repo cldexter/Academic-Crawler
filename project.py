@@ -47,11 +47,11 @@ def key_words_read(project_name):
 def project_add(project_name, project_description):
     if not dh.check_folders(project_name, "folder"): # 如果没有对应文件夹
         dh.new_project_files(project_name) # 新建文件
-        project_set = dh.txt_read("universal","project")
+        project_set = dh.text_read("universal","project").split("\n")
         time.sleep(0.1) # 确保文件夹读取后关闭
         new_project = project_name, project_description, ut.time_str("full")
         project_set.append(new_project)
-        dh.txt_write(project_set,"universal","project","w")
+        dh.text_write(project_set,"universal","project","w")
     else:
         op.output("Folder already exist", "warning", ut.time_str("full"))
 
