@@ -70,6 +70,5 @@ class Message:
             #delete self from list
 
 
-
 if __name__ == '__main__':
-    output("dexter is here", "info", "1991-12-13 03:45:23")
+        output("dexter is here", "info", "1991-12-13 03:45:23")
