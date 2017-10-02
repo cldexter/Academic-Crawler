@@ -45,7 +45,7 @@ import init
 import mongodb_handler as mh
 import journal as jn
 import utilities as ut
-import text_clean as tc
+import message as msg
 
 
 from data_handler import cur_file_dir
@@ -122,12 +122,15 @@ class Spider_pm:  # 爬虫的蜘蛛
                     self.pmid_set.append(pmid) # 把刚抓的这篇pmid加入pmid list
                     #这里的 paper_detail[0]是这篇文章的abstract,[1]是keywords,[2]是机构列表 [4]是全文下载的链接合集
                     self.suc_count += 1
-                    if self.run_type:
-                        print ut.time_str("time") + u"  INFO: Record NO." + str(self.processed_record) + " retrieved. Total retrieved: " + str(self.suc_count)
+                    msg.log("", ut.time_str("time"), "retrieved" + str(pmid), "info")
+                    msg.display(ut.time_str("time"), "retrieved" + str(pmid), "info")
+                    # if self.run_type:
+                    #     print ut.time_str("time") + u"  INFO: Record NO." + str(self.processed_record) + " retrieved. Total retrieved: " + str(self.suc_count)
             else:
                 self.skip_count += 1
-                if self.run_type:
-                    print ut.time_str("time") + u"  INFO: Record NO." + str(self.processed_record) + " skipped: already in. Total skipped: " + str(self.skip_count)
+                
+                # if self.run_type:
+                #     print ut.time_str("time") + u"  INFO: Record NO." + str(self.processed_record) + " skipped: already in. Total skipped: " + str(self.skip_count)
 
 
     def crawl_detail(self, pmid):  # 爬具体页面
@@ -144,7 +147,8 @@ class Spider_pm:  # 爬虫的蜘蛛
                 # 注意，这里是不断随机换agent的
                 soup = BeautifulSoup(doc)
                 abstract_raw = soup.findAll(name="abstracttext")
-                abstract = tc.text_clean(str(abstract_raw))[1:-1]
+                abstract = ut.regexp_replace(str(abstract_raw),ut.re_html)[1:-1]
+                # abstract = tc.text_clean(str(abstract_raw))[1:-1]
                 institues_raw = soup.findAll(name='dl')
                 if institues_raw:
                     institues_raw = institues_raw[0]

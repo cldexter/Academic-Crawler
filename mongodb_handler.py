@@ -93,12 +93,19 @@ def add_new_content(project, sstr, ctime, source, pmid, title, author, journal, 
     data = {"project": project, "sstr": sstr, "ctime": ctime, "status": 1, "source": source, "pmid": pmid, "title": title, "author": author, "journal": journal, "ojournal":ojournal, "if": impact_factor, "jzone": jzone,"issue": issue, "abstract": abstract, "keyword": keyword, "institue": institue, "irank": "", "country": "", "flink": flink, "usability": "", "relativeness": "", "quality": "", "highlight": "", "comment": ""}
     get_db("content").insert_one(data)
 
+
 def update_content(pmid, new_content):  # 更新论文数据模块，注意new_content不需要双引号
     get_db("content").update_one({'pmid': pmid}, {"$set": new_content})
 
 
 def del_content(pmid):
     get_db("content").delete_one({'pmid': pmid})
+
+
+# 对log做制定操作
+def add_new_log(task, ctime, loginfo, logtype):
+    data = {"task":task, "ctime":ctime, "loginfo":loginfo, "logtype":logtype}
+    get_db('log').insert_one(data)
 
 
 if __name__ == "__main__":

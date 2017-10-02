@@ -3,72 +3,46 @@
 """
 -------------------------------------------------
    File Name: message.py
-   Description: 在屏幕上打印的处理
+   Description: 所有子程序运行信息导出
    Author: Dexter Chen
-   Date：2017-09-01
+   Date：2017-09-19
 -------------------------------------------------
    Development Note：
-   1.接收信息，根据信息种类，选择打印颜色与存留时间
+   1. 处理信息，决定是否log
+   2. 根据显示模式，决定如何显示
+   3. 把需要显示的传递给输出screen，web
 -------------------------------------------------
    Change Log:
-   2017-09-14：重新复活。输出不涉及md，html和web
--------------------------------------------------
-   Message 属性：
-   颜色样式 + 显示时间（1，3，5） + 优先级（0-4越小越重要）
+   2018-10-02: 
 -------------------------------------------------
 """
-import sys
-import os
-from colorama import init, Fore, Back, Style
-import utilities as ut
-import run_logger as rl
 
-reload(sys)
-sys.setdefaultencoding('utf8')
+import mongodb_handler as mh
+import screen
 
-init(autoreset=True)
+display_protocol = 9
+log_protocol = 9
 
-info_type_def = {
-    "info": (Back.GREEN + Fore.WHITE, 3, 3),
-    "warning": (Back.YELLOW + Fore.WHITE, 10, 1),
-    "error": (Back.RED + Fore.WHITE, 10, 1),
-    "notice":(Back.LIGHTCYAN_EX + Fore.BLACK, 5, 2),
-    "time_stamp": (Back.LIGHTBLACK_EX + Fore.LIGHTWHITE_EX, 5, 4)
-}
+def log(task = "unscheduled",ctime, loginfo, logtype):
+    if log_protocol == 9:
+        mh.add_new_log(task, ctime, loginfo, logtype)
+    elif log_protocol == 2 and logtype in ["important", "error", "notice", "sum"]:
+        mh.add_new_log(task, ctime, loginfo, logtype)
+    elif log_protocol == 1 and logtype == "important":
+        mh.add_new_log(task, ctime, loginfo, logtype)
+    else:
+        pass
 
-message_set = []
+def display(ctime, msg, msgtype):
+    if display_protocol == 9:
+        screen.add_new_display(ctime, msg, msgtype)
+    elif display_protocol == 2 and msgtype in ["important", "error", "notice", "sum"]:
+        screen.add_new_display(ctime, msg, msgtype)
+    elif display_protocol == 1 and msgtype == "important":
+        screen.add_new_display(ctime, msg, msgtype)
+    else:
+        pass
 
-def output(info, info_type, created_time):
-    print(info_type_def["time_stamp"] + "[" + created_time + "]"),
-    print(info_type_def[info_type][0] + "[" + info_type + "]"),
-    print info
-
-class Message:
-    def __init__(info, info_type, created_time):
-        self.info = info
-        self.info_type = info_type
-        self.created_time = created_time
-        self.end_time = ut.time_str("full",info_type_def[self.info_type][1]/3600)
-        self.is_logged = 0
-
-    def display():
-        print(info_type_def["time_stamp"] + "[" + self.created_time + "]"),
-        print(info_type_def[self.info_type][0] + "[" + self.info_type + "]"),
-        print info
-
-    def log_error():
-        if self.info_type == "error":
-            rl.run_log(self.info, self.info_type, self.created_time)
-            self.is_logged = 1
-
-    def update():
-        if not self.is_logged:
-            self.log_error()
-        if ut.time_str < self.end_time:
-            self.display()
-        else:
-            #delete self from list
+def stats(ctime, info, infotype):
 
 
-if __name__ == '__main__':
-        output("dexter is here", "info", "1991-12-13 03:45:23")
