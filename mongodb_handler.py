@@ -8,7 +8,7 @@
    Date：2017-09-28
 -------------------------------------------------
    Development Note：
-   1.与data_handler的功能、函数名一致，可以直接替代
+   1.为了减少其它函数复杂性，所有BSON构成在这里进行
 -------------------------------------------------
    Change Log:
 
@@ -23,7 +23,7 @@
 
 from pymongo import *
 
-my_record = {"pmid":"200000", "name": "dexter", "hello": "world"}
+my_record = {"pmid": "200000", "name": "dexter", "hello": "world"}
 
 client = MongoClient('mongodb://localhost:27017/')  # 固定的不要变动
 
@@ -37,6 +37,8 @@ def get_db(data_type):  # 获取各个集合路径
         database = client["papers"]["log"]
     elif data_type == "task":
         database = client["papers"]["task"]
+    elif data_type == "journal":
+        database = client["papers"]["journal"]
     else:
         database = "error"
     return database
@@ -60,14 +62,36 @@ def add_record(data, data_type):
     get_db(data_type).insert_one(data)
 
 
-# 对论文指定操作部分
+# 对杂志的操作
+def read_journal_name_all():
+    journals = []
+    for record in get_db("journal").find():
+        journals.append(record['journal'])
+    return journals
 
+
+def read_journal_detail(journal_name):
+    record = get_db("journal").find_one({"journal":journal_name})
+    if record:
+        data = record['journal'], record['if'], record['jzone']
+    return data
+
+def add_journal(journal_name, impact_factor, journal_zone):
+    data = {"journal":journal_name, "if":impact_factor, "jzone":journal_zone}
+    get_db("journal").insert_one(data)
+
+
+# 对论文指定操作部分
 def read_pmid_all():
     pmids = []
     for record in get_db("content").find():
         pmids.append(record['pmid'])
     return pmids
 
+
+def add_new_content(project, sstr, ctime, source, pmid, title, author, journal, ojournal, impact_factor, jzone, issue, abstract, keyword, institue, flink): # 新增一个论文记录
+    data = {"project": project, "sstr": sstr, "ctime": ctime, "status": 1, "source": source, "pmid": pmid, "title": title, "author": author, "journal": journal, "ojournal":ojournal, "if": impact_factor, "jzone": jzone,"issue": issue, "abstract": abstract, "keyword": keyword, "institue": institue, "irank": "", "country": "", "flink": flink, "usability": "", "relativeness": "", "quality": "", "highlight": "", "comment": ""}
+    get_db("content").insert_one(data)
 
 def update_content(pmid, new_content):  # 更新论文数据模块，注意new_content不需要双引号
     get_db("content").update_one({'pmid': pmid}, {"$set": new_content})
@@ -78,4 +102,5 @@ def del_content(pmid):
 
 
 if __name__ == "__main__":
-    pass
+    print read_journal_detail('JOURNAL OF FOOD SAFETY')
+

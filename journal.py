@@ -9,14 +9,16 @@
    Date：2017-09-09
 -------------------------------------------------
    Development Note：
-   1. 查询杂志的标准缩写, 支持非完整查询
-   2. 查询杂志最后一次有记录的影响因子
-   3. 查询杂志分区信息
-   4. 储存并调用已查询过的信息，不用反复联网，增加速度
+   1. 清洗杂志名称，去除解释、说明等
+   2. 查询杂志的标准缩写, 支持非完整查询
+   3. 储存并调用已查询过的信息，增加速度
+   4. 如数据库中没有，查询杂志最后一次有记录的影响因子
+   5. 如数据库中没有，查询杂志分区信息
+   6. 储存新杂志信息
 -------------------------------------------------
    Change Log:
-   2017-09-14: 重新复活
    2017-09-15: 自动判断是否已搜索过
+   2017-10-01: 大幅优化；自动清洗杂志名称
 -------------------------------------------------
 """
 
@@ -25,48 +27,50 @@ import sys
 import re
 import requests
 from BeautifulSoup import BeautifulSoup
+
+import mongodb_handler as mh
+import agents
 from data_handler import csv_write, csv_read
 
 reload(sys)
 sys.setdefaultencoding('utf8')
 
-headers = {'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
-           'Referer': "https://www.ncbi.nlm.nih.gov/pubmed",
-           "Connection": "keep-alive",
-           "Pragma": "max-age=0",
-           "Cache-Control": "no-cache",
-           "Upgrade-Insecure-Requests": "1",
-           "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/602.2.14 (KHTML, like Gecko) Version/10.0.1 Safari/602.2.14",
-           "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-           "Accept-Encoding": "gzip, deflate, sdch",
-           "Accept-Language": "en-US,zh-CN;q=0.8,zh;q=0.6"
-           }
-
 run_type = 0
 
 
-def search_full_name(journal_name):  # 查找杂志的全名，支持模糊查询，只输出最符合的那个
-    url = "http://www.letpub.com.cn/journalappAjax.php?querytype=autojournal&term=" + \
-        journal_name.replace(" ", "+")
+def text_wash(journal_name):  # 原始名称清洗（主要针对各种括号和标点、解释、注释）
+    re_bracket = re.compile("[\\[\\(](.*?)[\\]\\)]")
+    re_explaination = re.compile(" ??[:=].*")
+    journal_name = journal_name.replace('&amp;',"&").replace(',','')
+    journal_name = re_bracket.sub('', journal_name)
+    journal_name = re_explaination.sub('', journal_name)
+    if run_type:
+        print "  INFO: Journal name cleaned."
+        print "  Journal Name: " + journal_name.upper()
+    return journal_name.upper() # 清洗过的名称全大写
+
+def get_full_name(journal_name):  # 查找杂志的全名，支持模糊查询，只输出最符合的那个
+    url = "http://www.letpub.com.cn/journalappAjax.php?querytype=autojournal&term=" + journal_name.replace("&","%26").replace(" ", "+")
     try:
         opener = requests.Session()
-        doc = opener.get(url, timeout=20, headers=headers).text
-        list = doc.split('},{')
+        doc = opener.get(url, timeout=20, headers=agents.get_header()).text
+        list = doc.split('},{') # 获取列表，但是只有最match的被采纳
         journal_name_start = list[0].find("label") + 8
         journal_name_end = list[0].find("\",\"", journal_name_start)
         journal_name = list[0][journal_name_start:journal_name_end]
         if run_type:
+            print "  URL:" + url
             print "  INFO: Journal full name retrieved from LetPub."
             print list
-            print "Journal Name: " + journal_name
+            print "  Journal Name: " + journal_name
         return journal_name
     except Exception, e:
         if run_type:
             print "  ERROR: No matching journal name found on LetPub."
             print e
-        return "No Record"
+        return ""
 
-def search_jornal_detail(journal_full_name):# 查找杂志影响因子、分区, 要求输入精准
+def get_jornal_if(journal_official_name):# 查找杂志影响因子、分区, 要求输入精准
     url = "http://www.letpub.com.cn/index.php?page=journalapp&view=search"
     search_str = {
         "searchname":"",
@@ -81,18 +85,18 @@ def search_jornal_detail(journal_full_name):# 查找杂志影响因子、分区,
         "searchjcrkind":"",
         "searchopenaccess":"",
         "searchsort": "relevance"}
-    search_str["searchname"] = journal_full_name
+    search_str["searchname"] = journal_official_name
     try:
         opener = requests.Session()
-        doc = opener.post(url, data=search_str).text
+        doc = opener.post(url, timeout=20, data=search_str).text
         soup = BeautifulSoup(doc)
         table = soup.findAll(name="td", attrs={
                                 "style": "border:1px #DDD solid; border-collapse:collapse; text-align:left; padding:8px 8px 8px 8px;"})
 
         re_label = re.compile("</?\w+[^>]*>")
         text = re_label.sub("", str(table)).split(', ')
-        impact_factor = text[2]
-        publication_zone = text[3][0]
+        impact_factor = text[2] # 影响因子
+        publication_zone = text[3][0] # 文章分区，只有第一个数字被截取
         if run_type:
             print "  INFO: Journal information retrieved from LetPub."
         return impact_factor, publication_zone
@@ -103,21 +107,23 @@ def search_jornal_detail(journal_full_name):# 查找杂志影响因子、分区,
         return "",""
 
 def journal_detail(journal_name): # 使用使用的函数，自带储存功能
-    journal_full_name = search_full_name(journal_name)
-    journal_record = csv_read("universal","journal")
-    for journal in journal_record:
-        if journal.split(",")[0] == journal_full_name:
-            data = journal.split(",")
-            if run_type:
-                print "  INFO: Journal information retrieved from local."
-            return data
+    journal_name = text_wash(journal_name) # 清洗文本，大写
+    journal_official_name = get_full_name(journal_name) # 输入模糊名，输出精准名
+    journal_record = mh.read_journal_name_all() 
+    if journal_official_name in journal_record: # 如果数据库中已经有了
+        record = mh.read_journal_detail(journal_official_name) # 直接提取
+        if run_type:
+            print "  INFO: Journal information retrieved from local."
+        return record
     else:
-        journal_detail = search_jornal_detail(journal_full_name)
-        journal_IF = journal_detail[0]
+        journal_detail = get_jornal_if(journal_official_name)
+        journal_if = journal_detail[0]
         journal_zone = journal_detail[1]
-        data = journal_full_name, journal_IF, journal_zone
-        csv_write(data,"universal","journal")
+        data = journal_official_name, journal_if, journal_zone
+        mh.add_journal(journal_official_name, journal_if, journal_zone) # 注意只储存大写
         return data
 
 if __name__ == '__main__':
-    print journal_detail("journal of food microbiology")
+    print journal_detail("Clinical advances in hematology &amp; oncology : H&amp;O")
+    # print journal_detail("Clinical &amp; experimental metastasis")
+    # print journal_detail('cancer epidemiology biomarkers & prevention')

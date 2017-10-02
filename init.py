@@ -17,6 +17,7 @@
 import mongodb_handler as mh
 
 pmids = []
+journals = []
 
 def init_sets():
     global pmids

@@ -2,7 +2,7 @@
 # !/usr/bin/env python
 """
 -------------------------------------------------
-   File Name: _sum.py
+   File Name: spider_pm.py
    Description: 蜘蛛类，专用于pubmed
    Author: Dexter Chen
    Date：2018-08-25
@@ -20,12 +20,8 @@
    2017-09-03: 把所有显示改写，改变模式
    2017-09-04: 重写抓取细节部分，机构可以抓取，关键词改为列表，修复csv空行
    2017-09-14: 把数据读写的放到data_handler.py中，避免重写
-   2017-09-30: 重大改变：
-   1. 爬sum-page和abstract-page分离：便于加速、使用代理，减少phantom的不稳定
-   2. 使用mongodb代替csv：彻底扫除csv更新时候的破事（逗号问题）
--------------------------------------------------
-   定义：例子
-   一条BSON记录：{"pmid":"1234567","author":"[D Chen, O Man]",""}
+   2017-09-17: 更新了若干细节
+   2017-10-01: 改为mongodb数据库
 -------------------------------------------------
 """
 
@@ -45,16 +41,20 @@ from selenium.webdriver.support import expected_conditions as EC
 from BeautifulSoup import BeautifulSoup
 
 import agents
-import data_handler as dh
-import utilities as ut
-import mongodb_handler as mh
 import init
+import mongodb_handler as mh
+import journal as jn
+import utilities as ut
+import text_clean as tc
+
+
+from data_handler import cur_file_dir
 
 reload(sys)
 sys.setdefaultencoding('utf8')
 
 
-class Spider_pm_sum:  # 爬虫的蜘蛛
+class Spider_pm:  # 爬虫的蜘蛛
     def __init__(self, project_name, key_words, record_number):
         self.key_words = key_words  # 输入关键词，关键词是一个集合
         self.record_number = record_number  # 需要爬多少个
@@ -84,15 +84,15 @@ class Spider_pm_sum:  # 爬虫的蜘蛛
         self.skip_sum_page = 0  # 失败的页面数量
         self.skip_count = 0  # 失败的数量
 
-        # header随机换，但是下面这个用于phantomjs不随便换
+        # header随机换，但是
         self.headers = agents.get_header()
 
+        self.pmid_set = mh.read_pmid_all()
 
 #=====================================================================================
 # 以下是需要的小函数
     def pmid_check(self, pmid):  # pmid在不在历史文件中，在，返回1；如果不在，返回0;用于防止抓多了
-        pmid_set = dh.text_read(self.project_name, "history")
-        if pmid in pmid_set:
+        if str(pmid) in self.pmid_set:
             return 1  # 如果有，说明是旧的
         else:
             return 0  # 如果没有，说明是新的
@@ -104,43 +104,83 @@ class Spider_pm_sum:  # 爬虫的蜘蛛
         journal_end_with = '\">'  # 查找期刊结尾
         m = 0
         while(m < len(self.pmid)):  # 有多少重复多少
-            author = str(self.author[m - 1])[16:-4]  # 作者
-            journal_end = str(
-                self.journal[m - 1]).find(journal_end_with)  # 期刊结尾位置
-            journal = str(
-                self.journal[m - 1])[26:journal_end].replace('<b>', '').replace('</b>', '')  # 期刊
-            pmid = str(self.pmid[m - 1])[4:-5]  # pmid
-            title_start = str(self.title[m - 1]).find(title_start_with) + 22
-            title = str(self.title[m - 1])[title_start:-
-                                           8].replace('<b>', '').replace('</b>', '')  # 论文名
-            issue = re.search(
-                "[1-2][09][0-9]{2}", str(self.issue[m - 1])).group(0)  # 刊号
+            pmid = str(self.pmid[m])[4:-5]  # pmid
             self.processed_record += 1  # 标记已处理的数量
             m += 1
             if not(self.pmid_check(pmid)):  # 如果之前没有这篇文章
-                detail = self.crawl_detail(pmid)  # 获取abstract和全文链接
-                if detail:  # 如果能够返回正确的abstract，记录；否则留给下一次抓取（不记录，视作新论文）
-                    data = ut.time_str(
-                        "full"), self.project_name, self.key_words, pmid, title, journal, author, issue, detail[0], detail[1], detail[2], detail[3]
-                    record = "|".join(data)
-                    #这里的 detail[0]是这篇文章的abstract,[1]是keywords,[2]是机构列表 [4]是全文下载的链接合集
-                    dh.csv_write(record, self.project_name, "data")  # 录入数据文件
-                    dh.text_write(pmid, self.project_name, "history")  # 录入历史文件
+                author = str(self.author[m])[16:-4]
+                author_list =  author.split(", ") # 作者
+                journal_end = str(self.journal[m]).find(journal_end_with)  # 期刊结尾位置
+                journal = str(self.journal[m])[26:journal_end].replace('<b>', '').replace('</b>', '')  # 期刊
+                journal_detail = jn.journal_detail(journal)
+                paper_detail = self.crawl_detail(pmid)  # 获取abstract和全文链接
+                title_start = str(self.title[m]).find(title_start_with) + 22
+                title = str(self.title[m])[title_start:-8].replace('<b>', '').replace('</b>', '')  # 论文名
+                issue = re.search("[1-2][09][0-9]{2}", str(self.issue[m])).group(0)  # 刊号
+                if paper_detail:  # 如果能够返回正确的abstract，记录；否则留给下一次抓取（不记录，视作新论文）
+                    mh.add_new_content(self.project_name, self.key_words, ut.time_str("full"), "pm", pmid, title, author_list, journal, journal_detail[0], journal_detail[1], journal_detail[2], issue, str(paper_detail[0]), paper_detail[1], paper_detail[2], paper_detail[3])
+                    self.pmid_set.append(pmid) # 把刚抓的这篇pmid加入pmid list
+                    #这里的 paper_detail[0]是这篇文章的abstract,[1]是keywords,[2]是机构列表 [4]是全文下载的链接合集
                     self.suc_count += 1
                     if self.run_type:
                         print ut.time_str("time") + u"  INFO: Record NO." + str(self.processed_record) + " retrieved. Total retrieved: " + str(self.suc_count)
-                time.sleep(1)  # 成功抓取，等待读写完成
             else:
                 self.skip_count += 1
                 if self.run_type:
                     print ut.time_str("time") + u"  INFO: Record NO." + str(self.processed_record) + " skipped: already in. Total skipped: " + str(self.skip_count)
-                time.sleep(0.5)  # 不成功过读取，也要给程序时间加载页面
 
+
+    def crawl_detail(self, pmid):  # 爬具体页面
+        link = "https://www.ncbi.nlm.nih.gov/pubmed/" + pmid
+        full_links_list = []  # 全文链接（不是abstract，是可下载的pdf）
+        institues_list = []  # 机构名称
+        key_words_list = []  # 关键词合集
+        # full_links_raw = [] # 原始全文链接的一个总集，需要处理到full_links_list里面
+        tries = 3  # 尝试获取3次，不成功就返回错误
+        while(tries > 0):
+            try:
+                opener = requests.Session()
+                doc = opener.get(link, timeout=20, headers=agents.get_header()).text
+                # 注意，这里是不断随机换agent的
+                soup = BeautifulSoup(doc)
+                abstract_raw = soup.findAll(name="abstracttext")
+                abstract = tc.text_clean(str(abstract_raw))[1:-1]
+                institues_raw = soup.findAll(name='dl')
+                if institues_raw:
+                    institues_raw = institues_raw[0]
+                    institues_raw = re.findall("<dd>.*?</dd>", str(institues_raw))
+                    for institues in institues_raw:
+                            institues_list.append(institues[4:-5])
+                full_content = soup.findAll(
+                    name='div', attrs={"class": "icons portlet"})
+                key_words_raw = soup.findAll(
+                    name="div", attrs={"class": "keywords"})
+                key_words_raw = str(key_words_raw)[45:-11].replace("; ", ";")
+                if key_words_raw:
+                    key_words_list = key_words_raw.split(';')
+                full_links_raw = re.findall(
+                    "<a href=.*?ref=", str(full_content))
+                if full_links_raw:
+                    for full_link in full_links_raw:
+                        full_links_list.append(
+                            full_link[9:-6].replace("&amp;", "&"))
+                return abstract, key_words_list, institues_list, full_links_list  # 返回的是一个值和一个集合
+                break
+            except Exception, e:
+                tries -= 1
+                if self.run_type:
+                    print e
+                    print ut.time_str("time") + u"  ERROR: No detail for record NO." + str(self.processed_record) + "; " + str(tries) + u" tries left."
+                time.sleep(3)  # 如果抓不成功，就先休息3秒钟
+        else:
+            if self.run_type:
+                print ut.time_str("time") + u"  ERROR: Detail not available for record NO." + str(self.processed_record) + ", skipped. Total skipped: " + str(self.skip_count)
+            return 0
 
     def project_sum(self):  # 所有的输出
         if self.processed_record == 0:
             print "  SUM: Project = " + self.project_name + " / Keywords = " + self.key_words
-        print "  SUM: Record to crawl: " + str(self.record_number) + " / Sum-page to crawl: " + str(self.sum_page_number)
+        print "  SUM: Record to scrawl: " + str(self.record_number) + " / Sum-page to scrawl: " + str(self.sum_page_number)
         if self.processed_record > 0:
             print "  SUM: Retrieved record " + str(self.suc_count) + " / Crawled pages " + str(self.suc_sum_page)
         print "  Start time: " + self.crawl_start_time
@@ -190,7 +230,7 @@ class Spider_pm_sum:  # 爬虫的蜘蛛
                 if self.run_type:
                     print e
                     print ut.time_str("time") + u"  ERROR: Cannot retrieve sum-page NO." + str(self.processed_sum_page) + "; " + str(tries) + u" tries left."
-                time.sleep(5)
+                time.sleep(0)
         else:
             if self.run_type:
                 print ut.time_str("time") + u"  ERROR: Sum-page NO." + str(self.processed_sum_page) + " not available now."
@@ -199,17 +239,18 @@ class Spider_pm_sum:  # 爬虫的蜘蛛
         sum_page_number = self.sum_page_number
         time_out = 60  # 页面加载时间，预定最多30秒
         tries_first_sum_page = 5  # 尝试获取第一个页面的次数
-        dcap = dict(DesiredCapabilities.PHANTOMJS)  # 设置userAgent
-        dcap["phantomjs.page.settings.userAgent"] = (
-            self.headers)  # header未来可以写成一个大集合，随机的
-        dcap["phantomjs.page.settings.loadImages"] = False  # 不载入图片，以加快速度
-        # browser = webdriver.PhantomJS(executable_path='C:\Python27\Scripts\phantomjs.exe', desired_capabilities=dcap)  # 加载浏览器，windows下使用
-        path = dh.cur_file_dir() + "/browser/phantomjs"
-        browser = webdriver.PhantomJS(
-            executable_path=path, desired_capabilities=dcap)  # 加载浏览器
-        browser.set_page_load_timeout(60)  # 设定网页加载超时,超过了就不加载
-        if self.run_type:
-            print ut.time_str("time") + "  INFO: Loading NO.1 sum-page in PhantomJS."
+        if self.sum_page_number > 1:
+            dcap = dict(DesiredCapabilities.PHANTOMJS)  # 设置userAgent
+            dcap["phantomjs.page.settings.userAgent"] = (
+                self.headers)  # header未来可以写成一个大集合，随机的
+            dcap["phantomjs.page.settings.loadImages"] = False  # 不载入图片，以加快速度
+            # browser = webdriver.PhantomJS(executable_path='C:\Python27\Scripts\phantomjs.exe', desired_capabilities=dcap)  # 加载浏览器，windows下使用
+            path = cur_file_dir() + "/browser/phantomjs"
+            browser = webdriver.PhantomJS(
+                executable_path=path, desired_capabilities=dcap)  # 加载浏览器
+            browser.set_page_load_timeout(60)  # 设定网页加载超时,超过了就不加载
+            if self.run_type:
+                print ut.time_str("time") + "  INFO: Loading NO.1 sum-page in PhantomJS."
         while (self.sum_page_number > 1 and tries_first_sum_page > 0):
             try:
                 browser.get(self.url)
@@ -268,7 +309,8 @@ class Spider_pm_sum:  # 爬虫的蜘蛛
                 break
                 if self.run_type:
                     print ut.time_str("time") + u"  ERROR: Sum-page NO." + str(self.processed_sum_page) + "not available now. Program terminated."
-        browser.quit()  # 关闭浏览器。当出现异常时记得在任务浏览器中关闭PhantomJS，因为会有多个PhantomJS在运行状态，影响电脑性能
+        if self.sum_page_number > 1:
+            browser.quit()  # 关闭浏览器。当出现异常时记得在任务浏览器中关闭PhantomJS，因为会有多个PhantomJS在运行状态，影响电脑性能
         self.crawl_end_time = ut.time_str()
         if self.run_type:
             self.project_sum()
@@ -277,58 +319,7 @@ class Spider_pm_sum:  # 爬虫的蜘蛛
         self.crawl_direct()  # 先爬第一sum-page
         self.crawl_phantom()  # 爬剩下的所有页
 
-#=====================================================================================
-# 重写的分离
-def crawl_detail(pmid):  # 爬具体页面
-    link = "https://www.ncbi.nlm.nih.gov/pubmed/" + pmid
-    full_links_list = []  # 全文链接（不是abstract，是可下载的pdf）
-    institues_list = []  # 机构名称
-    key_words_list = []  # 关键词合集
-    # full_links_raw = [] # 原始全文链接的一个总集，需要处理到full_links_list里面
-    tries = 3  # 尝试获取3次，不成功就返回错误
-    while(tries > 0):
-        try:
-            opener = requests.Session()
-            doc = opener.get(link, timeout=20, headers=agents.get_header()).text
-            # 注意，这里是不断随机换agent的
-            soup = BeautifulSoup(doc)
-            abstract = soup.findAll(name="abstracttext")
-            institues_raw = soup.findAll(name='dl') # 这里写的很烂要重写
-            institues_raw = institues_raw[0]
-            institues_raw = re.findall("<dd>.*?</dd>", str(institues_raw))
-            if institues_raw:
-                for institues in institues_raw:
-                        institues_list.append(institues[4:-5])
-
-            full_content = soup.findAll(
-                name='div', attrs={"class": "icons portlet"})
-            key_words_raw = soup.findAll(
-                name="div", attrs={"class": "keywords"})
-            key_words_raw = str(key_words_raw)[45:-11].replace("; ", ";")
-            if key_words_raw:
-                key_words_list = key_words_raw.split(';')
-            full_links_raw = re.findall(
-                "<a href=.*?ref=", str(full_content))
-            if full_links_raw:
-                for full_link in full_links_raw:
-                    full_links_list.append(
-                        full_link[9:-6].replace("&amp;", "&"))
-            return abstract, key_words_list, institues_list, full_links_list  # 返回的是一个值和一个集合
-            
-            break
-        except Exception, e:
-            tries -= 1
-            if self.run_type:
-                print e
-                print ut.time_str("time") + u"  ERROR: No detail for record NO." + str(self.processed_record) + "; " + str(tries) + u" tries left."
-            time.sleep(5)  # 如果抓不成功，就先休息5分钟
-    else:
-        if self.run_type:
-            print ut.time_str("time") + u"  ERROR: Detail not available for record NO." + str(self.processed_record) + ", skipped. Total skipped: " + str(self.skip_count)
-        return 0
-
-
 
 if __name__ == '__main__':
-    spider_test = _sum("test", "ovarian,cancer", 5000)
+    spider_test = Spider_pm("cancer", "breast,cancer", 200)
     spider_test.crawl_run()

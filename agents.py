@@ -112,4 +112,4 @@ def get_header():
     return HEADER
 
 if __name__ == '__main__':
-    pass
+    print get_header()
