@@ -46,6 +46,7 @@ import mongodb_handler as mh
 import journal as jn
 import utilities as ut
 import message as msg
+import stats
 
 
 from data_handler import cur_file_dir
@@ -121,16 +122,14 @@ class Spider_pm:  # 爬虫的蜘蛛
                     mh.add_new_content(self.project_name, self.key_words, ut.time_str("full"), "pm", pmid, title, author_list, journal, journal_detail[0], journal_detail[1], journal_detail[2], issue, str(paper_detail[0]), paper_detail[1], paper_detail[2], paper_detail[3])
                     self.pmid_set.append(pmid) # 把刚抓的这篇pmid加入pmid list
                     #这里的 paper_detail[0]是这篇文章的abstract,[1]是keywords,[2]是机构列表 [4]是全文下载的链接合集
-                    self.suc_count += 1
-                    msg.log("", ut.time_str("time"), "retrieved" + str(pmid), "info")
-                    msg.display(ut.time_str("time"), "retrieved" + str(pmid), "info")
-                    # if self.run_type:
-                    #     print ut.time_str("time") + u"  INFO: Record NO." + str(self.processed_record) + " retrieved. Total retrieved: " + str(self.suc_count)
+                    msg.stat("record", "succ")
+                    msg.log("", ut.time_str("time"), "retrieved " + str(pmid), "info")
+                    msg.display(ut.time_str("time"), "retrieved " + str(pmid), "info")
             else:
                 self.skip_count += 1
-                
-                # if self.run_type:
-                #     print ut.time_str("time") + u"  INFO: Record NO." + str(self.processed_record) + " skipped: already in. Total skipped: " + str(self.skip_count)
+                msg.stat("record", "skip")
+                msg.log("", ut.time_str("time"), "skipped " + str(pmid), "info")
+                msg.display(ut.time_str("time"), "skipped " + str(pmid), "info")
 
 
     def crawl_detail(self, pmid):  # 爬具体页面
@@ -172,13 +171,14 @@ class Spider_pm:  # 爬虫的蜘蛛
                 break
             except Exception, e:
                 tries -= 1
-                if self.run_type:
-                    print e
-                    print ut.time_str("time") + u"  ERROR: No detail for record NO." + str(self.processed_record) + "; " + str(tries) + u" tries left."
+                msg.log("", ut.time_str("time"), "retry " + str(pmid), "notice")
+                msg.log("", ut.time_str("time"), str(e), "error")
+                msg.display(ut.time_str("time"), "retrying " + str(pmid) + "; " + str(tries) + " tries left.", "notice")
                 time.sleep(3)  # 如果抓不成功，就先休息3秒钟
         else:
-            if self.run_type:
-                print ut.time_str("time") + u"  ERROR: Detail not available for record NO." + str(self.processed_record) + ", skipped. Total skipped: " + str(self.skip_count)
+            msg.stat("record", "fail")
+            msg.log("", ut.time_str("time"), "failed " + str(pmid), "error")
+            msg.display(ut.time_str("time"), "failed " + str(pmid), "error")
             return 0
 
     def project_sum(self):  # 所有的输出
@@ -200,13 +200,9 @@ class Spider_pm:  # 爬虫的蜘蛛
         tries = 2  # 尝试3次
         while(tries > 0):
             try:
+                self.project_sum()
                 opener = requests.Session()
-                # opener.get(self.url, headers = headers)
-                raw = opener.get(self.url, timeout=20,
-                                 headers=self.headers).text
-                if self.run_type:
-                    self.project_sum()
-                    print ut.time_str("time") + u"  INFO: Sum-page NO.1 is loaded in Requests. Total loaded: " + str(self.suc_sum_page + 1)
+                raw = opener.get(self.url, timeout=20, headers=self.headers).text              
                 soup = BeautifulSoup(raw)
                 max_sum_page_number_raw = soup.findAll(
                     name="input", attrs={"id": "pageno"})
@@ -218,8 +214,8 @@ class Spider_pm:  # 爬虫的蜘蛛
                                           number_start:number_end])  # 实际最大数值,整数
                 if max_sum_page_number < sum_page_number:
                     self.sum_page_number = max_sum_page_number  # 如果实际最大页面数没有计算值大，那用实际值，否则不变
-                    if self.run_type:
-                        print ut.time_str("time") + u"  NOTICE: Max page number changed:" + str(max_sum_page_number)
+                    msg.log("", ut.time_str("time"), "sum page number changed to " + str(max_sum_page_number), "notice")
+                    msg.display(ut.time_str("time"), "sum page number changed to " + str(max_sum_page_number), "notice")  
                 self.author = soup.findAll(name='p', attrs={"class": "desc"})
                 self.journal = soup.findAll(
                     name="span", attrs={'class': 'jrnl'})
@@ -228,16 +224,18 @@ class Spider_pm:  # 爬虫的蜘蛛
                 self.pmid = soup.findAll(name="dd")
                 self.generate_record()  # 直接产生结果
                 self.suc_sum_page += 1
+                msg.stat("sum_page", "succ")
+                msg.log("", ut.time_str("time"), "loaded NO.1 sum page in request", "info")
+                msg.display(ut.time_str("time"), "loaded NO.1 sum page in request", "info")  
                 break
             except Exception, e:
                 tries -= 1
-                if self.run_type:
-                    print e
-                    print ut.time_str("time") + u"  ERROR: Cannot retrieve sum-page NO." + str(self.processed_sum_page) + "; " + str(tries) + u" tries left."
-                time.sleep(0)
+                msg.log("", ut.time_str("time"), "retry loading NO.1 page in request", "notice")
+                msg.log("", ut.time_str("time"), str(e), "error")
+                msg.display(ut.time_str("time"), "retrying loading NO.1 page in request; " + str(tries) + " tries left.", "notice")
         else:
-            if self.run_type:
-                print ut.time_str("time") + u"  ERROR: Sum-page NO." + str(self.processed_sum_page) + " not available now."
+            msg.log("", ut.time_str("time"), "failed NO.1 page in request", "error")
+            msg.display(ut.time_str("time"), "failed NO.1 page in request", "error")
 
     def crawl_phantom(self):  # 用于使用phantomjs爬取sum-page，可以爬无限页，但是速度慢
         sum_page_number = self.sum_page_number
@@ -253,22 +251,20 @@ class Spider_pm:  # 爬虫的蜘蛛
             browser = webdriver.PhantomJS(
                 executable_path=path, desired_capabilities=dcap)  # 加载浏览器
             browser.set_page_load_timeout(60)  # 设定网页加载超时,超过了就不加载
-            if self.run_type:
-                print ut.time_str("time") + "  INFO: Loading NO.1 sum-page in PhantomJS."
         while (self.sum_page_number > 1 and tries_first_sum_page > 0):
             try:
                 browser.get(self.url)
-                if self.run_type:
-                    print ut.time_str("time") + u"  INFO: NO." + str(self.processed_sum_page) + u" loaded. Total loaded: " + str(self.suc_sum_page)
-                WebDriverWait(browser, 60).until(
-                    EC.presence_of_element_located((By.ID, "footer")))
+                WebDriverWait(browser, 60).until(EC.presence_of_element_located((By.ID, "footer")))
+                msg.log("", ut.time_str("time"), "loading NO.1 page in Phantomjs", "notice")
+                msg.log("", ut.time_str("time"), str(e), "error")
+                msg.display(ut.time_str("time"), "loading NO.1 page in Phantomjs", "notice")                
                 break
             except Exception as e:
                 tries_first_sum_page -= 1
-                if self.run_type:
-                    print e
-                    print ut.time_str("time") + u"  ERROR: Sum-page NO.1 not available in PhatomJS; " + str(tries_first_sum_page) + " tries left."
-                    print ut.time_str("time") + u"  NOTICE: Browser refreshed, wait for 5 secs to retry."
+                msg.log("", ut.time_str("time"), "retry loading NO.1 page in Phantomjs", "notice")
+                msg.log("", ut.time_str("time"), str(e), "error")
+                msg.display(ut.time_str("time"), "retrying loading NO.1 page in Phantomjs; " + str(tries_first_sum_page) + " tries left.", "notice")
+                msg.display(ut.time_str("time"), "wait for 5 secs now...", "notice")
                 browser.refresh()
                 browser.implicitly_wait(5)
                 # browser.save_screenshot("log.png")
@@ -280,13 +276,11 @@ class Spider_pm:  # 爬虫的蜘蛛
                 print ut.time_str("time") + "  INFO: Loading NO." + str(self.processed_sum_page) + " sum-page in PhantomJS."
             while(tries_other_sum_page > 0):  # 尝试多少次，默认尝试3次，不行就打不开
                 try:
-                    browser.find_element_by_link_text(
-                        "Next >").click()  # 直接就点开“下一页”，从第二页开始
-                    WebDriverWait(browser, time_out).until(
-                        EC.presence_of_element_located((By.ID, "footer")))
-                    # browser.implicitly_wait(5) # 等5秒钟，加载
-                    if self.run_type:
-                        print ut.time_str("time") + u"  INFO: Sum-page NO." + str(self.processed_sum_page) + u" loaded in PhantomJS. Total loaded: " + str(self.suc_sum_page + 1)
+                    browser.find_element_by_link_text("Next >").click()  # 直接就点开“下一页”，从第二页开始
+                    WebDriverWait(browser, time_out).until(EC.presence_of_element_located((By.ID, "footer")))
+                    msg.log("", ut.time_str("time"), "loading NO." + str(stats.processed_sum_page) + " page in Phantomjs", "notice")
+                    msg.log("", ut.time_str("time"), str(e), "error")
+                    msg.display(ut.time_str("time"), "loading NO." + str(stats.processed_sum_page) + " page in Phantomjs", "notice")                     
                     soup = BeautifulSoup(browser.page_source)
                     self.author = soup.findAll(
                         name='p', attrs={"class": "desc"})

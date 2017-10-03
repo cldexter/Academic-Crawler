@@ -3,7 +3,7 @@
 """
 -------------------------------------------------
    File Name: stats.py
-   Description: 运行情况分析
+   Description: 运行统计数据
    Author: Dexter Chen
    Date：2017-09-19
 -------------------------------------------------
@@ -14,10 +14,13 @@
    Change Log:
    2018-08-31: 
 -------------------------------------------------
-   格式：
-   log: 信息，信息类型，生成时间 
--------------------------------------------------
 """
 
-def log(info, info_type, created_time):
-    pass
+processed_sum_page = 0
+processed_record = 0
+success_sum_page = 0
+success_record = 0
+failed_sum_page = 0
+failed_record = 0
+skipped_sum_page = 0
+skipped_record = 0

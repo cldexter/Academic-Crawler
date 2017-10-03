@@ -21,7 +21,6 @@ import sys
 import os
 from colorama import init, Fore, Back, Style
 import utilities as ut
-import run_logger as rl
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -68,6 +67,7 @@ class Message:
             self.display()
         else:
             #delete self from list
+            pass
 
 
 
