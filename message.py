@@ -20,6 +20,7 @@
 import mongodb_handler as mh
 import screen
 import stats
+import utilities as ut
 
 display_protocol = 9
 log_protocol = 9
@@ -67,4 +68,4 @@ def stat(stats_info, stats_infotype): # 用于统计的信息
             stats.skipped_record += 1
 
 if __name__ == '__main__':
-    pass
+    display(ut.time_str("full"), "test", "notice")

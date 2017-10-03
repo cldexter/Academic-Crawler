@@ -28,17 +28,18 @@ sys.setdefaultencoding('utf8')
 init(autoreset=True)
 
 info_type_def = {
-    "info": (Back.GREEN + Fore.WHITE, 3, 3),
-    "warning": (Back.YELLOW + Fore.WHITE, 10, 1),
-    "error": (Back.RED + Fore.WHITE, 10, 1),
+    "info":(Back.GREEN + Fore.WHITE, 3, 3),
+    "warning":(Back.YELLOW + Fore.WHITE, 10, 1),
+    "error":(Back.RED + Fore.WHITE, 10, 1),
     "notice":(Back.LIGHTCYAN_EX + Fore.BLACK, 5, 2),
-    "time_stamp": (Back.LIGHTBLACK_EX + Fore.LIGHTWHITE_EX, 5, 4)
+    "time_stamp":(Back.LIGHTBLACK_EX + Fore.LIGHTWHITE_EX, 5, 4)
 }
 
 message_set = []
 
 def add_new_display(ctime, info, info_type):
-    print(info_type_def["time_stamp"] + "[" + ctime + "]"),
+    print ctime, type(ctime), info, type(info), info_type, type(info_type)
+    print(info_type_def[time_stamp] + "[" + ctime + "]"),
     print(info_type_def[info_type][0] + "[" + info_type + "]"),
     print info
 
@@ -72,4 +73,4 @@ class Message:
 
 
 if __name__ == '__main__':
-    output("dexter is here", "info", "1991-12-13 03:45:23")
+    add_new_display("dexter is here", "info", "1991-12-13 03:45:23")
