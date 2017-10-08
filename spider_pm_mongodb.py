@@ -78,17 +78,17 @@ class Spider_pm:  # 爬虫的蜘蛛
         self.crawl_start_time = ""  # 什么时候项目开始的
         self.crawl_end_time = ""  # 项目什么时候结束的
 
-        self.processed_sum_page = 0  # 处理过的
-        self.processed_record = 0  # 处理过的数量
-        self.suc_sum_page = 0  # 成功的页面数量
-        self.suc_count = 0  # 成功的数量
-        self.skip_sum_page = 0  # 失败的页面数量
-        self.skip_count = 0  # 失败的数量
+        # self.processed_sum_page = 0  # 处理过的
+        # self.processed_record = 0  # 处理过的数量
+        # self.suc_sum_page = 0  # 成功的页面数量
+        # self.suc_count = 0  # 成功的数量
+        # self.skip_sum_page = 0  # 失败的页面数量
+        # self.skip_count = 0  # 失败的数量
 
         # header随机换，但是
-        self.headers = agents.get_header()
+        self.headers = agents.get_header() # 随机选择一个以供浏览器使用
 
-        self.pmid_set = mh.read_pmid_all()
+        self.pmid_set = mh.read_pmid_all() # 只读一次
 
 #=====================================================================================
 # 以下是需要的小函数
@@ -105,80 +105,76 @@ class Spider_pm:  # 爬虫的蜘蛛
         journal_end_with = '\">'  # 查找期刊结尾
         m = 0
         while(m < len(self.pmid)):  # 有多少重复多少
-            pmid = str(self.pmid[m])[4:-5]  # pmid
-            self.processed_record += 1  # 标记已处理的数量
-            m += 1
+            pmid = str(self.pmid[m])[4:-5]  # 先找到pmid，再决定要不要下一步
+            # self.processed_record += 1  # 标记已处理的数量
             if not(self.pmid_check(pmid)):  # 如果之前没有这篇文章
                 author = str(self.author[m])[16:-4]
-                author_list =  author.split(", ") # 作者
-                journal_end = str(self.journal[m]).find(journal_end_with)  # 期刊结尾位置
-                journal = str(self.journal[m])[26:journal_end].replace('<b>', '').replace('</b>', '')  # 期刊
-                journal_detail = jn.journal_detail(journal)
-                paper_detail = self.crawl_detail(pmid)  # 获取abstract和全文链接
+                author_list =  author.split(", ") # 作者列表
                 title_start = str(self.title[m]).find(title_start_with) + 22
                 title = str(self.title[m])[title_start:-8].replace('<b>', '').replace('</b>', '')  # 论文名
-                issue = re.search("[1-2][09][0-9]{2}", str(self.issue[m])).group(0)  # 刊号
+                issue = re.search("[1-2][09][0-9]{2}", str(self.issue[m])).group(0)  # 刊号，即年份
+                journal_end = str(self.journal[m]).find(journal_end_with)  # 期刊结尾位置
+                journal = str(self.journal[m])[26:journal_end].replace('<b>', '').replace('</b>', '')  # 期刊名
+                journal_detail = jn.journal_detail(journal) # 获取期刊的正式名称，影响因子及分区信息
+                paper_detail = self.crawl_detail(pmid)  # 获取文章abstract，keyword列表，机构列表和全文链接列表
                 if paper_detail:  # 如果能够返回正确的abstract，记录；否则留给下一次抓取（不记录，视作新论文）
                     mh.add_new_content(self.project_name, self.key_words, ut.time_str("full"), "pm", pmid, title, author_list, journal, journal_detail[0], journal_detail[1], journal_detail[2], issue, str(paper_detail[0]), paper_detail[1], paper_detail[2], paper_detail[3])
                     self.pmid_set.append(pmid) # 把刚抓的这篇pmid加入pmid list
                     #这里的 paper_detail[0]是这篇文章的abstract,[1]是keywords,[2]是机构列表 [4]是全文下载的链接合集
-                    msg.stat("record", "succ")
-                    msg.log("", ut.time_str("time"), "retrieved " + str(pmid), "info")
-                    msg.display(ut.time_str("time"), "retrieved " + str(pmid), "info")
+                    msg.stat("record", "succ") # 统计：记录成功
+                    msg.display(ut.time_str("time"), "retrieved record: " + str(pmid) + "; total retrieved: " + str(stats.success_record), "info") # 显示：记录成功
+                    msg.log("", ut.time_str("time"), "retrieved record: " + str(pmid), "info") # 记录：记录成功
             else:
-                self.skip_count += 1
                 msg.stat("record", "skip")
-                msg.log("", ut.time_str("time"), "skipped " + str(pmid), "info")
-                msg.display(ut.time_str("time"), "skipped " + str(pmid), "info")
-
+                msg.display(ut.time_str("time"), "skipped record: " + str(pmid) + "; total skipped: " + str(stats.skipped_record), "info")
+                msg.log("", ut.time_str("time"), "skipped record: " + str(pmid), "info")
+            m += 1    
 
     def crawl_detail(self, pmid):  # 爬具体页面
         link = "https://www.ncbi.nlm.nih.gov/pubmed/" + pmid
-        full_links_list = []  # 全文链接（不是abstract，是可下载的pdf）
-        institues_list = []  # 机构名称
         key_words_list = []  # 关键词合集
-        # full_links_raw = [] # 原始全文链接的一个总集，需要处理到full_links_list里面
+        institues_list = []  # 机构名称
+        full_links_list = []  # 全文链接（不是abstract，是可下载的pdf）
+
         tries = 3  # 尝试获取3次，不成功就返回错误
         while(tries > 0):
             try:
                 opener = requests.Session()
-                doc = opener.get(link, timeout=20, headers=agents.get_header()).text
-                # 注意，这里是不断随机换agent的
+                doc = opener.get(link, timeout=20, headers=agents.get_header()).text # 注意，这里是不断随机换agent的
                 soup = BeautifulSoup(doc)
                 abstract_raw = soup.findAll(name="abstracttext")
-                abstract = ut.regexp_replace(str(abstract_raw),ut.re_html)[1:-1]
-                # abstract = tc.text_clean(str(abstract_raw))[1:-1]
+                abstract = ut.regexp_replace(str(abstract_raw),ut.re_html)[1:-1] # 即时清理abstract
+                full_content = soup.findAll(name='div', attrs={"class": "icons portlet"})                
+                
+                key_words_raw = soup.findAll(name="div", attrs={"class": "keywords"})
+                if key_words_raw: # 如果有keyword的话，很多文章是没有
+                    key_words_raw = str(key_words_raw)[45:-11].replace("; ", ";")
+                    key_words_list = key_words_raw.split(';')
+                
                 institues_raw = soup.findAll(name='dl')
-                if institues_raw:
+                if institues_raw: # 如果有institues的话，大部分文章都有
                     institues_raw = institues_raw[0]
                     institues_raw = re.findall("<dd>.*?</dd>", str(institues_raw))
                     for institues in institues_raw:
-                            institues_list.append(institues[4:-5])
-                full_content = soup.findAll(
-                    name='div', attrs={"class": "icons portlet"})
-                key_words_raw = soup.findAll(
-                    name="div", attrs={"class": "keywords"})
-                key_words_raw = str(key_words_raw)[45:-11].replace("; ", ";")
-                if key_words_raw:
-                    key_words_list = key_words_raw.split(';')
-                full_links_raw = re.findall(
-                    "<a href=.*?ref=", str(full_content))
-                if full_links_raw:
+                        institues_list.append(institues[4:-5])
+                    
+                full_links_raw = re.findall("<a href=.*?ref=", str(full_content))
+                if full_links_raw: # 如果有全文链接
                     for full_link in full_links_raw:
-                        full_links_list.append(
-                            full_link[9:-6].replace("&amp;", "&"))
-                return abstract, key_words_list, institues_list, full_links_list  # 返回的是一个值和一个集合
+                        full_links_list.append(full_link[9:-6].replace("&amp;", "&"))
+
+                return abstract, key_words_list, institues_list, full_links_list  # 返回的是一个str值和3个集合
                 break
             except Exception, e:
                 tries -= 1
-                msg.log("", ut.time_str("time"), "retry " + str(pmid), "notice")
+                msg.display(ut.time_str("time"), "retrying record: " + str(pmid) + "; " + str(tries) + " tries left", "notice")
+                msg.log("", ut.time_str("time"), "retry record: " + str(pmid), "notice")
                 msg.log("", ut.time_str("time"), str(e), "error")
-                msg.display(ut.time_str("time"), "retrying " + str(pmid) + "; " + str(tries) + " tries left.", "notice")
                 time.sleep(3)  # 如果抓不成功，就先休息3秒钟
         else:
+            msg.display(ut.time_str("time"), "retrieve record fail: " + str(pmid), "error")
+            msg.log("", ut.time_str("time"), "failed record: " + str(pmid), "error")
             msg.stat("record", "fail")
-            msg.log("", ut.time_str("time"), "failed " + str(pmid), "error")
-            msg.display(ut.time_str("time"), "failed " + str(pmid), "error")
             return 0
 
     def project_sum(self):  # 所有的输出
@@ -194,124 +190,121 @@ class Spider_pm:  # 爬虫的蜘蛛
 #=====================================================================================
 # 实际爬的部分开始
     def crawl_direct(self):  # 用于直接爬sum-page，只能爬第一页
-        sum_page_number = self.sum_page_number  # 总共需要多少sum-page
         self.crawl_start_time = ut.time_str()
-        self.processed_sum_page += 1  # 处理1个sumpage
-        tries = 2  # 尝试3次
+        # self.processed_sum_page += 1  # 处理1个sumpage
+        tries = 3  # 尝试3次
         while(tries > 0):
             try:
-                self.project_sum()
+                # self.project_sum()
                 opener = requests.Session()
                 raw = opener.get(self.url, timeout=20, headers=self.headers).text              
                 soup = BeautifulSoup(raw)
-                max_sum_page_number_raw = soup.findAll(
-                    name="input", attrs={"id": "pageno"})
-                number_start = str(max_sum_page_number_raw).find(
-                    "last=") + 6  # 找到总数开始位置
-                number_end = str(max_sum_page_number_raw).find(
-                    "\" />")  # 找到总数结束位置
-                max_sum_page_number = int(str(max_sum_page_number_raw)[
-                                          number_start:number_end])  # 实际最大数值,整数
-                if max_sum_page_number < sum_page_number:
-                    self.sum_page_number = max_sum_page_number  # 如果实际最大页面数没有计算值大，那用实际值，否则不变
-                    msg.log("", ut.time_str("time"), "sum page number changed to " + str(max_sum_page_number), "notice")
-                    msg.display(ut.time_str("time"), "sum page number changed to " + str(max_sum_page_number), "notice")  
+
+                max_sum_page_number_raw = soup.findAll(name="input", attrs={"id": "pageno"}) # 找到含总数的div
+                number_start = str(max_sum_page_number_raw).find("last=") + 6  # 找到总数开始位置
+                number_end = str(max_sum_page_number_raw).find("\" />")  # 找到总数结束位置
+                max_sum_page_number = int(str(max_sum_page_number_raw)[number_start:number_end])  # 实际最大数值,整数
+
+                if max_sum_page_number < self.sum_page_number: # 如果实际最大页面数没有计算值大
+                    self.sum_page_number = max_sum_page_number  # 那用实际值，否则不变
+                    msg.display(ut.time_str("time"), "max sum page changed: " + str(max_sum_page_number), "notice")  
+                    msg.log("", ut.time_str("time"), "max sum page changed: " + str(max_sum_page_number), "notice")
+
+                msg.display(ut.time_str("time"), "loaded: NO.1 sum page (requests)", "info") 
+                msg.log("", ut.time_str("time"), "loaded sum page: NO.1 (requests)", "info")
+                msg.stat("sum_page", "succ")
+
                 self.author = soup.findAll(name='p', attrs={"class": "desc"})
-                self.journal = soup.findAll(
-                    name="span", attrs={'class': 'jrnl'})
+                self.journal = soup.findAll(name="span", attrs={'class': 'jrnl'})
                 self.title = soup.findAll(name='p', attrs={"class": "title"})
                 self.issue = soup.findAll(name="p", attrs={'class': 'details'})
                 self.pmid = soup.findAll(name="dd")
+
                 self.generate_record()  # 直接产生结果
-                self.suc_sum_page += 1
-                msg.stat("sum_page", "succ")
-                msg.log("", ut.time_str("time"), "loaded NO.1 sum page in request", "info")
-                msg.display(ut.time_str("time"), "loaded NO.1 sum page in request", "info")  
+                # self.suc_sum_page += 1
+
                 break
             except Exception, e:
+                print e
                 tries -= 1
-                msg.log("", ut.time_str("time"), "retry loading NO.1 page in request", "notice")
+                msg.display(ut.time_str("time"), "load retrying: NO.1 sum page (requests); " + str(tries) + " tries left", "notice")
+                msg.log("", ut.time_str("time"), "retry sum page: NO.1 (requests)", "notice")
                 msg.log("", ut.time_str("time"), str(e), "error")
-                msg.display(ut.time_str("time"), "retrying loading NO.1 page in request; " + str(tries) + " tries left.", "notice")
+                
         else:
-            msg.log("", ut.time_str("time"), "failed NO.1 page in request", "error")
-            msg.display(ut.time_str("time"), "failed NO.1 page in request", "error")
+            msg.display(ut.time_str("time"), "load failed: NO.1 sum page (request)", "error")
+            msg.log("", ut.time_str("time"), "fail sum page: NO.1 (request)", "error")
+            msg.stat('sum_page', "fail")
+            
 
     def crawl_phantom(self):  # 用于使用phantomjs爬取sum-page，可以爬无限页，但是速度慢
         sum_page_number = self.sum_page_number
         time_out = 60  # 页面加载时间，预定最多30秒
-        tries_first_sum_page = 5  # 尝试获取第一个页面的次数
-        if self.sum_page_number > 1:
+        tries_first_sum_page = 3  # 尝试获取第一个页面的次数
+
+        if self.sum_page_number > 1: # 如果页面不超过1个，就根本不启动浏览器
             dcap = dict(DesiredCapabilities.PHANTOMJS)  # 设置userAgent
-            dcap["phantomjs.page.settings.userAgent"] = (
-                self.headers)  # header未来可以写成一个大集合，随机的
+            dcap["phantomjs.page.settings.userAgent"] = (self.headers)  # header未来可以写成一个大集合，随机的
             dcap["phantomjs.page.settings.loadImages"] = False  # 不载入图片，以加快速度
             # browser = webdriver.PhantomJS(executable_path='C:\Python27\Scripts\phantomjs.exe', desired_capabilities=dcap)  # 加载浏览器，windows下使用
-            path = cur_file_dir() + "/browser/phantomjs"
-            browser = webdriver.PhantomJS(
-                executable_path=path, desired_capabilities=dcap)  # 加载浏览器
-            browser.set_page_load_timeout(60)  # 设定网页加载超时,超过了就不加载
+            path = cur_file_dir() + "/browser/phantomjs" # 浏览器地址
+            browser = webdriver.PhantomJS(executable_path=path, desired_capabilities=dcap)  # 加载浏览器
+            browser.set_page_load_timeout(time_out)  # 设定网页加载超时,超过了就不加载
         while (self.sum_page_number > 1 and tries_first_sum_page > 0):
             try:
                 browser.get(self.url)
-                WebDriverWait(browser, 60).until(EC.presence_of_element_located((By.ID, "footer")))
-                msg.log("", ut.time_str("time"), "loading NO.1 page in Phantomjs", "notice")
-                msg.log("", ut.time_str("time"), str(e), "error")
-                msg.display(ut.time_str("time"), "loading NO.1 page in Phantomjs", "notice")                
+                WebDriverWait(browser, time_out).until(EC.presence_of_element_located((By.ID, "footer")))
+                msg.display(ut.time_str("time"), "loaded: NO.1 sum page (phantomjs)", "info")
+                msg.log("", ut.time_str("time"), "loaded sum page: NO.1 (phantomjs)", "info")                
                 break
             except Exception as e:
                 tries_first_sum_page -= 1
-                msg.log("", ut.time_str("time"), "retry loading NO.1 page in Phantomjs", "notice")
+                msg.display(ut.time_str("time"), "load retrying: NO.1 sum page (phantomjs); " + str(tries_first_sum_page) + " tries left", "notice")
+                msg.log("", ut.time_str("time"), "retry loading NO.1 sum page in (phantomjs)", "notice")
                 msg.log("", ut.time_str("time"), str(e), "error")
-                msg.display(ut.time_str("time"), "retrying loading NO.1 page in Phantomjs; " + str(tries_first_sum_page) + " tries left.", "notice")
-                msg.display(ut.time_str("time"), "wait for 5 secs now...", "notice")
                 browser.refresh()
                 browser.implicitly_wait(5)
-                # browser.save_screenshot("log.png")
-        while(sum_page_number > 1 and tries_first_sum_page > 1):  # 确认需要第二页，如果sum-page只有1页，那就不用再打开
-            # 从这里开始循环，直到所有的页面都爬完为止
-            self.processed_sum_page += 1
+        while(sum_page_number > 1 and tries_first_sum_page > 0):  # 确认需要第二页，如果sum-page只有1页，那就不用再打开; 如果第一页打开失败，也不用打开；从这里开始循环，直到所有的页面都爬完为止
+            # self.processed_sum_page += 1
             tries_other_sum_page = 5  # 尝试获取其它每个页面的次数，每次循环还原成5次（不累积）
-            if self.run_type:
-                print ut.time_str("time") + "  INFO: Loading NO." + str(self.processed_sum_page) + " sum-page in PhantomJS."
-            while(tries_other_sum_page > 0):  # 尝试多少次，默认尝试3次，不行就打不开
+            
+            while(tries_other_sum_page > 0):  # 尝试多少次，默认尝试5次，不行就打不开
                 try:
                     browser.find_element_by_link_text("Next >").click()  # 直接就点开“下一页”，从第二页开始
                     WebDriverWait(browser, time_out).until(EC.presence_of_element_located((By.ID, "footer")))
+                    
+                    msg.display(ut.time_str("time"), "loading NO." + str(stats.processed_sum_page) + " page in Phantomjs", "notice")   
                     msg.log("", ut.time_str("time"), "loading NO." + str(stats.processed_sum_page) + " page in Phantomjs", "notice")
-                    msg.log("", ut.time_str("time"), str(e), "error")
-                    msg.display(ut.time_str("time"), "loading NO." + str(stats.processed_sum_page) + " page in Phantomjs", "notice")                     
+                                      
                     soup = BeautifulSoup(browser.page_source)
-                    self.author = soup.findAll(
-                        name='p', attrs={"class": "desc"})
-                    self.journal = soup.findAll(
-                        name="span", attrs={'class': 'jrnl'})
-                    self.title = soup.findAll(
-                        name='p', attrs={"class": "title"})
-                    self.issue = soup.findAll(
-                        name="p", attrs={'class': 'details'})
+                    self.author = soup.findAll(name='p', attrs={"class": "desc"})
+                    self.journal = soup.findAll(name="span", attrs={'class': 'jrnl'})
+                    self.title = soup.findAll(name='p', attrs={"class": "title"})
+                    self.issue = soup.findAll(name="p", attrs={'class': 'details'})
                     self.pmid = soup.findAll(name="dd")
                     self.generate_record()  # 直接产生结果
-                    self.suc_sum_page += 1
+
+                    # self.suc_sum_page += 1
                     sum_page_number -= 1
                     break
                 except Exception as e:
                     tries_other_sum_page -= 1
-                    if self.run_type:
-                        print e
-                        print ut.time_str("time") + u"  ERROR: Sum-page NO." + str(self.processed_sum_page) + u" not available in PhantomJS; " + str(tries_other_sum_page) + " tries left."
-                        print ut.time_str("time") + u"  NOTICE: Browser refreshed, now wait for 5 secs to retry."
+                    msg.log("", ut.time_str("time"), "retrying loading NO." + str(stats.processed_sum_page) + " page in Phantomjs", "error")
+                    msg.log("", ut.time_str("time"), str(e), "error")
+                    msg.display(ut.time_str("time"), "retrying loading NO." + str(stats.processed_sum_page) + " page in Phantomjs; " + str(tries_other_sum_page) + " tries left.", "error")
                     browser.refresh()  # 不行就刷新
                     browser.implicitly_wait(5)  # 不行就等5秒重试
+
             if tries_other_sum_page == 0:
                 break
-                if self.run_type:
-                    print ut.time_str("time") + u"  ERROR: Sum-page NO." + str(self.processed_sum_page) + "not available now. Program terminated."
+                msg.log("", ut.time_str("time"), "failed NO." + str(stats.processed_sum_page) + " page in Phantomjs", "error")
+                msg.display(ut.time_str("time"), "failed NO." + str(stats.processed_sum_page) + " page in Phantomjs", "error")
         if self.sum_page_number > 1:
-            browser.quit()  # 关闭浏览器。当出现异常时记得在任务浏览器中关闭PhantomJS，因为会有多个PhantomJS在运行状态，影响电脑性能
-        self.crawl_end_time = ut.time_str()
-        if self.run_type:
-            self.project_sum()
+            browser.quit()  # 关闭浏览器。当出现异常时记得在任务浏览器中关闭PhantomJS
+
+        # self.crawl_end_time = ut.time_str()
+        # if self.run_type:
+        #     self.project_sum()
 
     def crawl_run(self):
         self.crawl_direct()  # 先爬第一sum-page
@@ -320,4 +313,4 @@ class Spider_pm:  # 爬虫的蜘蛛
 
 if __name__ == '__main__':
     spider_test = Spider_pm("cancer", "breast,cancer", 200)
-    spider_test.crawl_run()
+    spider_test.crawl_direct()

@@ -38,10 +38,10 @@ info_type_def = {
 message_set = []
 
 def add_new_display(ctime, info, info_type):
-    print ctime, type(ctime), info, type(info), info_type, type(info_type)
-    print(info_type_def[time_stamp] + "[" + ctime + "]"),
-    print(info_type_def[info_type][0] + "[" + info_type + "]"),
+    print(info_type_def["time_stamp"][0] + "[" + ctime + "]"),
+    print(info_type_def[info_type][0] + "[" + info_type.ljust(7) + "]"),
     print info
+
 
 class Message:
     def __init__(info, info_type, ctime):
@@ -73,4 +73,9 @@ class Message:
 
 
 if __name__ == '__main__':
-    add_new_display("dexter is here", "info", "1991-12-13 03:45:23")
+    add_new_display("1991-12-13 03:45:23", "dexter is here", "notice")
+    add_new_display("1991-12-13 03:45:23", "dexter is here", "warning")
+    add_new_display("1991-12-13 03:45:23", "dexter is here", "info")
+    add_new_display("1991-12-13 03:45:23", "dexter is here", "error")
+
+    # print info_type_def['time_stamp']

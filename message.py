@@ -3,7 +3,7 @@
 """
 -------------------------------------------------
    File Name: message.py
-   Description: 所有子程序运行信息导出
+   Description: 对外输出的log，显示及统计信息处理
    Author: Dexter Chen
    Date：2017-09-19
 -------------------------------------------------
@@ -12,18 +12,15 @@
    2. 根据显示模式，决定如何显示
    3. 把需要显示的传递给输出screen，web
 -------------------------------------------------
-   Change Log:
-   2018-10-02: 
--------------------------------------------------
+
 """
 
 import mongodb_handler as mh
 import screen
 import stats
-import utilities as ut
 
-display_protocol = 9
-log_protocol = 9
+display_protocol = 9 # 定义哪种显示方法
+log_protocol = 9 # 定义哪种记录方法
 
 def log(task, ctime, loginfo, logtype): # 用于日志的信息
     if log_protocol == 9:
@@ -38,7 +35,7 @@ def log(task, ctime, loginfo, logtype): # 用于日志的信息
 def display(ctime, msg, msgtype): # 用于显示的信息
     if display_protocol == 9:
         screen.add_new_display(ctime, msg, msgtype)
-    elif display_protocol == 2 and msgtype in ["important", "error", "notice", "sum"]:
+    elif display_protocol == 2 and msgtype in ["important", "error", "notice", "sum"]: # 只记录错误
         screen.add_new_display(ctime, msg, msgtype)
     elif display_protocol == 1 and msgtype == "important":
         screen.add_new_display(ctime, msg, msgtype)
@@ -68,4 +65,4 @@ def stat(stats_info, stats_infotype): # 用于统计的信息
             stats.skipped_record += 1
 
 if __name__ == '__main__':
-    display(ut.time_str("full"), "test", "notice")
+    pass

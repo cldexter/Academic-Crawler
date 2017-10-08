@@ -100,6 +100,24 @@
 - 2 = 记录重要信息、提醒信息及总结信息
 - 9 = 记录所有信息
 
-### 
+### 记录语句说明
+- 抓取记录成功显示 "retrieved record: 23456789; total retrieved: 1000" info
+    - log "retrieve record: 23456789"
+- 抓取记录跳过显示 "skipped record: 23456789; total skipped: 300" info
+    - log "skip record: 23456789" 
+- 抓取记录失败重试显示 "retrying record: 23456789; 2 tries left" notice
+    - log "retry record: 23456789"
+- 抓取记录最终失败显示 "retrieve record failed: 23456789" error
+    - log "fail record: 23456789"
+- 抓取sp成功显示（direct） "loaded: NO.2 sum page (requests); total page loaded: 100" info
+    - log "load sum page: NO.1 (requests)"
+- 抓取sp成功显示（phantomjs） "loaded: NO.2 sum page (phantomJS); total page loaded: 100" info
+    - log "load sum page: NO.2 (phantomjs)"
+- 抓取sp失败重试显示 "load retrying: NO.2 sum page (requests); 2 tries left" notice
+    - log "retry sum page: NO.2 (phantomjs)"
+- 抓取sp最终失败显示 "load failed: NO.2 sum page (phantomJS)" error
+    - log "fail sum page: NO.2 (phantomjs)"
+- 液面数字更改 "max sum page changed: 23" notice
+    - log "max sum page changed: 23"
     
     
