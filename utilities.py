@@ -43,6 +43,7 @@ def dict_replace(data, re_dict):
 re_html = "</?\w+[^>]*>\s?" # 清除所有html标签
 re_label = "label=\"\"[\w\s]*?\"\">?\s?" # 清除非html标签
 re_nlmcatagory = "nlmcategory=\"\"[\s\w]+\"\">?\s?" # 清除nlm标签
+
 def regexp_replace(data, re_data):
     # 用正则表达式去除标签
     re_content = re.compile(re_data) # 清除所有html标签

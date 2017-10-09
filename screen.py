@@ -8,14 +8,10 @@
    Date：2017-09-01
 -------------------------------------------------
    Development Note：
-   1.接收信息，根据信息种类，选择打印颜色与存留时间
+   1.最上方显示统计数据，状态数据
+   2.接收信息，根据信息种类，选择打印颜色与存留时间
 -------------------------------------------------
-   Change Log:
-   2017-09-14：重新复活。输出不涉及md，html和web
--------------------------------------------------
-   Message 属性：
-   颜色样式 + 显示时间（1，3，5） + 优先级（0-4越小越重要）
--------------------------------------------------
+
 """
 import sys
 import os
@@ -39,7 +35,7 @@ message_set = []
 
 def add_new_display(ctime, info, info_type):
     print(info_type_def["time_stamp"][0] + "[" + ctime + "]"),
-    print(info_type_def[info_type][0] + "[" + info_type.ljust(7) + "]"),
+    print(info_type_def[info_type][0] + "[" + info_type + "]"),
     print info
 
 
