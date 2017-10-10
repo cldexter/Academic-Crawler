@@ -23,12 +23,11 @@
 
 from pymongo import *
 
-my_record = {"pmid": "200000", "name": "dexter", "hello": "world"}
-
 client = MongoClient('mongodb://localhost:27017/')  # 固定的不要变动
 
 
-def get_db(data_type):  # 获取各个集合路径
+# 获取各个集合路径; 注意这里的db不是database，是collection
+def get_db(data_type):  
     if data_type == "content":
         database = client["papers"]["content"]
     elif data_type == "project":
@@ -71,17 +70,19 @@ def read_journal_name_all():
 
 
 def read_journal_detail(journal_name):
-    record = get_db("journal").find_one({"journal":journal_name})
+    record = get_db("journal").find_one({"journal": journal_name})
     if record:
         data = record['journal'], record['if'], record['jzone']
     return data
 
+
 def add_journal(journal_name, impact_factor, journal_zone):
-    data = {"journal":journal_name, "if":impact_factor, "jzone":journal_zone}
+    data = {"journal": journal_name,
+            "if": impact_factor, "jzone": journal_zone}
     get_db("journal").insert_one(data)
 
 
-# 对论文指定操作部分
+# 对论文(content)指定操作部分
 def read_pmid_all():
     pmids = []
     for record in get_db("content").find():
@@ -89,8 +90,9 @@ def read_pmid_all():
     return pmids
 
 
-def add_new_content(project, sstr, ctime, source, pmid, title, author, journal, ojournal, impact_factor, jzone, issue, abstract, keyword, institue, flink): # 新增一个论文记录
-    data = {"project": project, "sstr": sstr, "ctime": ctime, "status": 1, "source": source, "pmid": pmid, "title": title, "author": author, "journal": journal, "ojournal":ojournal, "if": impact_factor, "jzone": jzone,"issue": issue, "abstract": abstract, "keyword": keyword, "institue": institue, "irank": "", "country": "", "flink": flink, "usability": "", "relativeness": "", "quality": "", "highlight": "", "comment": ""}
+def add_new_content(project, sstr, ctime, source, pmid, title, author, journal, ojournal, impact_factor, jzone, issue, abstract, keyword, institue, flink):  # 新增一个论文记录
+    data = {"project": project, "sstr": sstr, "ctime": ctime, "status": 1, "source": source, "pmid": pmid, "title": title, "author": author, "journal": journal, "ojournal": ojournal, "if": impact_factor, "jzone": jzone,
+            "issue": issue, "abstract": abstract, "keyword": keyword, "institue": institue, "irank": "", "country": "", "flink": flink, "usability": "", "relativeness": "", "quality": "", "highlight": "", "comment": ""}
     get_db("content").insert_one(data)
 
 
@@ -104,36 +106,48 @@ def del_content(pmid):
 
 # 对log做制定操作
 def add_new_log(task, ctime, loginfo, logtype):
-    data = {"task":task, "ctime":ctime, "loginfo":loginfo, "logtype":logtype}
+    data = {"task": task, "ctime": ctime,
+            "loginfo": loginfo, "logtype": logtype}
     get_db('log').insert_one(data)
 
 
 # 对project做指定操作
-def add_project(project_name, project_description, ctime):
-    data = {"project":project_name, "description":project_description, "ctime":ctime}
-    get_db("project").insert_one(data)    
-
 def read_project_name_all():
     projects = []
     for record in get_db("project").find():
         projects.append(record['project'])
     return projects
 
+
+def read_project_detail(project_name):
+    record = get_db("project").find_one({"project": project_name})
+    if record:
+        data = record['project'], record['sstr'], record['type']
+    return data    
+
+
+def add_project(project_name, project_description, ctime):
+    data = {"project": project_name,
+            "description": project_description, "ctime": ctime}
+    get_db("project").insert_one(data)
+
+
 def del_project(project_name):
-    get_db("project").delete_one({'project':project_name})
+    get_db("project").delete_one({'project': project_name})
 
 # 对search string做指定操作
 
-def add_search_str(project_name, sstr, ctime): # 搜索词条专门是一个列表
-    data = {"project":project_name, "sstr":sstr, "ctime":ctime}
-    get_db("sstr").insert_one(data)  
+
+def add_search_str(project_name, sstr, ctime):  # 搜索词条专门是一个列表
+    data = {"project": project_name, "sstr": sstr, "ctime": ctime}
+    get_db("sstr").insert_one(data)
 
 
 def del_search_str(sstr):
-    get_db("sstr").delete_one({'sstr':sstr})
+    get_db("sstr").delete_one({'sstr': sstr})
 
-def 
+
+def
 
 if __name__ == "__main__":
     print read_journal_detail('JOURNAL OF FOOD SAFETY')
-
