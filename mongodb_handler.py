@@ -108,6 +108,32 @@ def add_new_log(task, ctime, loginfo, logtype):
     get_db('log').insert_one(data)
 
 
+# 对project做指定操作
+def add_project(project_name, project_description, ctime):
+    data = {"project":project_name, "description":project_description, "ctime":ctime}
+    get_db("project").insert_one(data)    
+
+def read_project_name_all():
+    projects = []
+    for record in get_db("project").find():
+        projects.append(record['project'])
+    return projects
+
+def del_project(project_name):
+    get_db("project").delete_one({'project':project_name})
+
+# 对search string做指定操作
+
+def add_search_str(project_name, sstr, ctime): # 搜索词条专门是一个列表
+    data = {"project":project_name, "sstr":sstr, "ctime":ctime}
+    get_db("sstr").insert_one(data)  
+
+
+def del_search_str(sstr):
+    get_db("sstr").delete_one({'sstr':sstr})
+
+def 
+
 if __name__ == "__main__":
     print read_journal_detail('JOURNAL OF FOOD SAFETY')
 

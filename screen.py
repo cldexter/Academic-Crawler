@@ -23,55 +23,30 @@ sys.setdefaultencoding('utf8')
 
 init(autoreset=True)
 
-info_type_def = {
-    "info":(Back.GREEN + Fore.WHITE, 3, 3),
-    "warning":(Back.YELLOW + Fore.WHITE, 10, 1),
-    "error":(Back.RED + Fore.WHITE, 10, 1),
-    "notice":(Back.LIGHTCYAN_EX + Fore.BLACK, 5, 2),
-    "time_stamp":(Back.LIGHTBLACK_EX + Fore.LIGHTWHITE_EX, 5, 4)
+color_code = {
+    "info":(Back.GREEN + Fore.WHITE),
+    "warning":(Back.YELLOW + Fore.WHITE),
+    "error":(Back.RED + Fore.LIGHTWHITE_EX),
+    "notice":(Back.LIGHTCYAN_EX + Fore.BLACK),
+    "time_stamp":(Back.LIGHTBLACK_EX + Fore.LIGHTWHITE_EX)
 }
 
 message_set = []
 
 def add_new_display(ctime, info, info_type):
-    print(info_type_def["time_stamp"][0] + "[" + ctime + "]"),
-    print(info_type_def[info_type][0] + "[" + info_type + "]"),
+    print(color_code["time_stamp"] + " [" + ctime + "] "),
+    print(color_code[info_type] + " [" + info_type + "] "),
     print info
 
 
-class Message:
-    def __init__(info, info_type, ctime):
-        self.info = info
-        self.info_type = info_type
-        self.ctime = ctime
-        self.end_time = ut.time_str("full",info_type_def[self.info_type][1]/3600)
-        self.is_logged = 0
+def time_box():# 把时间相关的列出来
+    print " ---------------------------------------------------------------"
+    print " │     Current Time    │      Start Time     │   Elapsed Time  │"
+    print " │ " + ut.time_str("full") + " │ " + ut.time_str("full") + " │ " + "  ?? Hr ?? min " + " │"
+    print " ---------------------------------------------------------------"
 
-    def display():
-        print(info_type_def["time_stamp"] + "[" + self.ctime + "]"),
-        print(info_type_def[self.info_type][0] + "[" + self.info_type + "]"),
-        print info
-
-    def log_error():
-        if self.info_type == "error":
-            rl.run_log(self.info, self.info_type, self.ctime)
-            self.is_logged = 1
-
-    def update():
-        if not self.is_logged:
-            self.log_error()
-        if ut.time_str < self.end_time:
-            self.display()
-        else:
-            #delete self from list
-            pass
-
-
+def project_menu():
+    
 
 if __name__ == '__main__':
-    add_new_display("1991-12-13 03:45:23", "dexter is here", "notice")
-    add_new_display("1991-12-13 03:45:23", "dexter is here", "warning")
-    add_new_display("1991-12-13 03:45:23", "dexter is here", "info")
-    add_new_display("1991-12-13 03:45:23", "dexter is here", "error")
-
-    # print info_type_def['time_stamp']
+    add_new_display("10:10:10", "dexter is here", "error")

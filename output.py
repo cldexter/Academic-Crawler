@@ -50,20 +50,7 @@ class Color: #打印颜色的定义，在这里做字典用
     form = 7  #表格用白色的来打
     WHITE = 15
 
-def Logo():
-    cPrint(u"    ■      ■                      ■                    ■                    ■  ■■■■■                ■ ", Color.form)
-    cPrint(u"    ■    ■    ■■■            ■  ■            ■■■    ■■■■    ■■■    ■      ■      ■■■■■■■■■■ ", Color.form)
-    cPrint(u"    ■  ■■■  ■  ■          ■      ■          ■              ■        ■    ■      ■      ■", Color.form)
-    cPrint(u"  ■■■■  ■  ■  ■        ■          ■        ■■■■  ■■■■        ■    ■■■■■      ■  ■■■■■■■", Color.form)
-    cPrint(u"    ■  ■■■■    ■■  ■■              ■■    ■              ■    ■■■■                  ■            ■", Color.form)
-    cPrint(u"    ■  ■  ■                ■■■■■■          ■■■■■■■■■        ■    ■■■■■      ■    ■■  ■", Color.form)
-    cPrint(u"    ■■■■■  ■■■        ■        ■          ■      ■    ■        ■■■      ■          ■        ■", Color.form)
-    cPrint(u"  ■■  ■  ■  ■  ■        ■        ■          ■■    ■■  ■        ■■  ■    ■          ■■■■■■■■■■", Color.form)
-    cPrint(u"    ■  ■■■  ■  ■        ■        ■          ■      ■    ■      ■  ■    ■■■■■      ■        ■      ■", Color.form)
-    cPrint(u"    ■  ■  ■    ■          ■    ■■    ■      ■■    ■■  ■  ■      ■        ■          ■        ■    ■", Color.form)
-    cPrint(u"    ■  ■  ■  ■  ■        ■            ■      ■      ■      ■■      ■        ■          ■        ■", Color.form)
-    cPrint(u"  ■■■  ■■■      ■        ■■■■■■■      ■■    ■■      ■      ■  ■■■■■■■  ■        ■■            [v0.9]", Color.form)
-    print "\n"
+
 
 def cPrint(info,color): #实现彩色打印  
     ctypes.windll.Kernel32.GetStdHandle.restype = ctypes.c_ulong  

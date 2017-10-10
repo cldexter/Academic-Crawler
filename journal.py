@@ -10,11 +10,10 @@
 -------------------------------------------------
    Development Note：
    1. 清洗杂志名称，去除解释、说明等
-   2. 查询杂志的标准缩写, 支持非完整查询
+   2. 查询杂志的标准缩写, 支持非完整查询。转化为大写
    3. 储存并调用已查询过的信息，增加速度
-   4. 如数据库中没有，查询杂志最后一次有记录的影响因子
+   4. 如数据库中没有，查询杂志最后一年影响因子
    5. 如数据库中没有，查询杂志分区信息
-   6. 储存新杂志信息
 -------------------------------------------------
 """
 
@@ -26,18 +25,16 @@ from BeautifulSoup import BeautifulSoup
 
 import mongodb_handler as mh
 import agents
-import 
+import message as msg
+import utilities as ut
 
 reload(sys)
 sys.setdefaultencoding('utf8')
 
-run_type = 0
-
-
-def text_wash(journal_name):  # 原始名称清洗（主要针对各种括号和标点、解释、注释）
-    re_bracket = re.compile("[\\[\\(](.*?)[\\]\\)]")
-    re_explaination = re.compile(" ??[:=].*")
-    journal_name = journal_name.replace('&amp;',"&").replace(',','')
+def journal_name_wash(journal_name):  # 原始名称清洗（主要针对各种括号和标点、解释、注释）
+    re_bracket = re.compile("[\\[\\(](.*?)[\\]\\)]") # 去处括号解释
+    re_explaination = re.compile(" ??[:=].*") # 去处冒号后的解释
+    journal_name = journal_name.replace('&amp;',"&").replace(',','') # &是部分名称中包含的
     journal_name = re_bracket.sub('', journal_name)
     journal_name = re_explaination.sub('', journal_name)
     journal_name = journal_name.upper()  # 清洗过的名称全大写
@@ -52,16 +49,12 @@ def get_full_name(journal_name):  # 查找杂志的全名，支持模糊查询�
         journal_name_start = list[0].find("label") + 8
         journal_name_end = list[0].find("\",\"", journal_name_start)
         journal_name = list[0][journal_name_start:journal_name_end]
-        if run_type:
-            print "  URL:" + url
-            print "  INFO: Journal full name retrieved from LetPub."
-            print list
-            print "  Journal Name: " + journal_name
+        journal_name = journal_name.upper() # 查找到的名字也是全大写
+        msg.log("", ut.time_str("full"), "retrieved official journal name: " + journal_name, "debug")
         return journal_name
     except Exception, e:
-        if run_type:
-            print "  ERROR: No matching journal name found on LetPub."
-            print e
+        msg.log("", ut.time_str("full"), "failed retreive official journal name: " + journal_name, "debug")
+        msg.log("", ut.time_str("full"), str(e), "debug")
         return ""
 
 def get_jornal_if(journal_official_name):# 查找杂志影响因子、分区, 要求输入精准
@@ -84,38 +77,39 @@ def get_jornal_if(journal_official_name):# 查找杂志影响因子、分区, �
         opener = requests.Session()
         doc = opener.post(url, timeout=20, data=search_str).text
         soup = BeautifulSoup(doc)
-        table = soup.findAll(name="td", attrs={
-                                "style": "border:1px #DDD solid; border-collapse:collapse; text-align:left; padding:8px 8px 8px 8px;"})
-
+        table = soup.findAll(name="td", attrs={"style": "border:1px #DDD solid; border-collapse:collapse; text-align:left; padding:8px 8px 8px 8px;"})
         re_label = re.compile("</?\w+[^>]*>")
         text = re_label.sub("", str(table)).split(', ')
         impact_factor = text[2] # 影响因子
         publication_zone = text[3][0] # 文章分区，只有第一个数字被截取
-
+        msg.log("", ut.time_str("full"), "retrieved if and jzone: " + journal_official_name, "debug")
         return impact_factor, publication_zone
     except Exception, e:
-
+        msg.log("", ut.time_str("full"), "retrieved if and jzone: " + journal_official_name, "debug")
+        msg.log("", ut.time_str("full"), str(e), "debug")
         return "",""
 
 def journal_detail(journal_name): # 使用使用的函数，自带储存功能
-    journal_name = text_wash(journal_name) # 清洗文本，大写
-    journal_official_name = get_full_name(journal_name) # 清洗后的输入，输出精准名（全大写）
+    washed_journal_name = journal_name_wash(journal_name) # 清洗文本，大写
+    journal_official_name = get_full_name(washed_journal_name) # 清洗后的输入，输出精准名（全大写）
 
     journal_record = mh.read_journal_name_all() # 读取数据库中现有的名字
 
     if journal_official_name in journal_record: # 如果数据库中已经有了
         record = mh.read_journal_detail(journal_official_name) # 直接提取
+        msg.log("", ut.time_str("full"), "retrieved local data: " + journal_official_name, "debug")
         return record
-
     else:
         journal_detail = get_jornal_if(journal_official_name)
         journal_if = journal_detail[0]
         journal_zone = journal_detail[1]
+        if journal_if and journal_zone:
+            mh.add_journal(journal_official_name, journal_if, journal_zone) # 注意只储存大写
+            msg.log("", ut.time_str("full"), "retrieved web data: " + journal_official_name, "debug")
+            else:
+                msg.log("", ut.time_str("full"), "no if and jzone info: " + journal_official_name, "debug")
         data = journal_official_name, journal_if, journal_zone
-        mh.add_journal(journal_official_name, journal_if, journal_zone) # 注意只储存大写
         return data
 
 if __name__ == '__main__':
-    print journal_detail("Clinical advances in hematology &amp; oncology : H&amp;O")
-    # print journal_detail("Clinical &amp; experimental metastasis")
-    # print journal_detail('cancer epidemiology biomarkers & prevention')
+    print journal_detail("EUROPEAN JOURNAL OF CANCER CARE")

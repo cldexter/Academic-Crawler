@@ -23,10 +23,8 @@
 """
 import sys
 import os
-import time
-import data_handler as dh
 import utilities as ut
-import output as op
+import mongodb_handler as mh
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -35,7 +33,7 @@ projects = [] # 把project.csv里面的信息先预读到内存
 key_words = [] # 关键词 
 
 def projects_read():
-    global projects
+    projects = mh.
     project_set = dh.csv_read("universal", "project")
     projects = map(lambda x: x.split(",|,"), project_set)
 

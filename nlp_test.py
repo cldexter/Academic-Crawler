@@ -1,6 +1,17 @@
 #! /usr/bin/env python
 # coding=utf-8
 # -*- coding:utf-8 -*-
+'''
+-------------------------------------------------
+   File Name: lsi_model.py
+   Description: 产生LSI模型
+   Author: Dexter Chen
+   Date：2018-10-09
+-------------------------------------------------
+   Development Note：
+   
+-------------------------------------------------
+'''
 
 from nltk.corpus import stopwords
 from nltk.stem.lancaster import LancasterStemmer
@@ -22,40 +33,49 @@ processed_word_list = []
 
 corpus = []
 
-def content_pre(str):
-    stop_words = stopwords.words('english')
-    english_punctuations = [',', '.', ':', ';', '?', '(', ')', '[', ']', '&', '!', '*', '@', '#', '$', '%', "-", "~"]
+dictionary = corpora.Dictionary(processed_word_list)
+stop_words = stopwords.words('english') # 英文停用词
+english_punctuations = [',', '.', ':', ';', '?', '(', ')', '[', ']', '&', '!', '*', '@', '#', '$', '%', "-", "~"] # 英文标点符号
+
+def content_pre(str): # 准备好文本：去停用词、标点、词干化; 输入str，输出集合
+    content = str.encode("utf-8")
+
+    word_set = [] # 分词后的
     word_no_punc = [] # 没有标点符号的
     word_no_stop_words = [] # 没有停用词
-    word_stemmed = [] # 词干化
-    word_set = word_tokenize(str.decode('utf-8'))
+    word_stemmed = [] # 词干化后的
+
+    word_set = word_tokenize(content) # tokenize
+
     for word in word_set: # 去掉标点符号
         if word not in stop_words:
             word_no_punc.append(word)
+
     for word in word_no_punc: # 去掉停用词
         if word not in english_punctuations:
             word_no_stop_words.append(word)
-    st = LancasterStemmer()
-    for word in word_no_stop_words:
+
+    st = LancasterStemmer() 
+    for word in word_no_stop_words: # 词干化
         word_stemmed.append(st.stem(word))
+
     return word_stemmed
 
-def words_bag(word_list):
-    
-    for word_list in processed_word_list:
-        corpus.append(dictionary.doc2bow(word_list))
+def words_bag(word_list): # 生成词袋；输入预处理的词，输出corpus
+    corpus = dictionary.doc2bow(word_list)
+    return corpus
 
-for str in word_list:
-    processed_word_list.append(content_pre(str))
+def tfidf_model(corpus_list): # 建立tfidf模型； 输入corpus的集合，输出文档向量
+    tfidf_model = models.TfidfModel(corpus_list) # 建立tfidf模型, 由多个corpus训练所得
+    vector_list = tfidf_model[corpus_list] # 用模型处理 corpus集合
+    return vector_list
 
-dictionary = corpora.Dictionary(processed_word_list)
-words_bag(processed_word_list)
-tfidf = models.TfidfModel(corpus)
-corpus_tfidf = tfidf[corpus]
+def lsi_model(vector_list, topic_number): # 建立LSI模型; 输入文档向量，bow
+    lsi_model = models.LsiModel(vector_list, id2word=dictionary, num_topics=topic_number) # 建立lsi模型，由多个vector训练所得；topic_number可以主观加入
+    lsi_list = lsi_model[vector_list] # 用模型处理 vector集合
+    return lsi_list # 输出topic相关度指数
 
-lsi = models.LsiModel(corpus_tfidf, id2word=dictionary, num_topics=10)
-lsi.print_topics(10)
+def build_index()
 
-corpus_lsi = lsi[corpus_tfidf]
-for doc in corpus_lsi:
-    print doc
+
+def build_models(corpus_list): # 

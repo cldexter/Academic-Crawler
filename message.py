@@ -25,7 +25,13 @@ log_protocol = 9 # 定义哪种记录方法
 def log(task, ctime, loginfo, logtype): # 用于日志的信息
     if log_protocol == 9:
         mh.add_new_log(task, ctime, loginfo, logtype)
-    elif log_protocol == 2 and logtype in ["important", "error", "notice", "sum"]:
+    elif log_protocol == 5 and logtype in ["important", "error", "notice", "debug", "info"]:
+        mh.add_new_log(task, ctime, loginfo, logtype)
+    elif log_protocol == 4 and logtype in ["important", "error", "notice", "info"]:
+        mh.add_new_log(task, ctime, loginfo, logtype)
+    elif log_protocol == 3 and logtype in ["important", "error", "notice"]:
+        mh.add_new_log(task, ctime, loginfo, logtype)
+    elif log_protocol == 2 and logtype in ["important", "error"]:
         mh.add_new_log(task, ctime, loginfo, logtype)
     elif log_protocol == 1 and logtype == "important":
         mh.add_new_log(task, ctime, loginfo, logtype)
@@ -35,7 +41,13 @@ def log(task, ctime, loginfo, logtype): # 用于日志的信息
 def display(ctime, msg, msgtype): # 用于显示的信息
     if display_protocol == 9:
         screen.add_new_display(ctime, msg, msgtype)
-    elif display_protocol == 2 and msgtype in ["important", "error", "notice", "sum"]: # 只记录错误
+    elif display_protocol == 5 and msgtype in ["important", "error", "notice", "debug", "info"]: 
+        screen.add_new_display(ctime, msg, msgtype)
+    elif display_protocol == 4 and msgtype in ["important", "error", "notice", "info"]: 
+        screen.add_new_display(ctime, msg, msgtype)
+    elif display_protocol == 3 and msgtype in ["important", "error", "notice"]: 
+        screen.add_new_display(ctime, msg, msgtype)
+    elif display_protocol == 2 and msgtype in ["important", "error"]: # 只记录错误
         screen.add_new_display(ctime, msg, msgtype)
     elif display_protocol == 1 and msgtype == "important":
         screen.add_new_display(ctime, msg, msgtype)

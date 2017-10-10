@@ -29,6 +29,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from BeautifulSoup import BeautifulSoup
+from data_handler import cur_file_dir
 
 import agents
 import mongodb_handler as mh
@@ -36,9 +37,6 @@ import journal as jn
 import utilities as ut
 import message as msg
 import stats
-
-
-from data_handler import cur_file_dir
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -75,7 +73,6 @@ class Spider_pm:  # 爬虫的蜘蛛
         self.pmid = []  # Pmid的合集；每次抓取新页面都清空
 
 
-
 #=====================================================================================
 # 以下是需要的小函数
     def pmid_check(self, pmid):  # pmid在不在历史文件中，在，返回1；如果不在，返回0;用于防止抓多了
@@ -89,6 +86,7 @@ class Spider_pm:  # 爬虫的蜘蛛
         title_end_with = "</a>"  # 查找标题的结尾
         journal_start_with = 'title='  # 查找期刊开头
         journal_end_with = '\">'  # 查找期刊结尾
+        
         m = 0
         while(m < len(self.pmid)):  # 有多少重复多少
             msg.stat("record", "proc") # 处理记录+1
