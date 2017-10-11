@@ -26,23 +26,28 @@ import utilities as ut
 task_list = []
 
 def generate_task_config(project_name, sstr):
-    sstr_number = mh.count_search_str(project_name) #一共有多少个sstr
+    project_task_number = mh.count_project_task(project_name) # 本项目一共运行过多少task
     task_number = mh.count_task(project_name, sstr) #本sstr运行过多少次
-    if sstr_number <= 1: # 如果这个是第一个sstr
-        endwith = 0 # 不提前终止
-        else:
-            endwith =1 # 按条件提前终止
-    if task_number <= 1: # 如果是第一次运行
+    if project_task_number == 0: # 如果从来没有运行过这个项目下的task
+        endwith = 0
+    else:
+        endwith = 1 # 按条件提前终止
+    if task_number == 0: # 如果是本sstr第一次运行
         mrhours = 6 # 单位是小时
         itemnum = 5000
-        else:
-            mrhours = 0.1
-            itemnum = 20
+    else:
+        mrhours = 0.1
+        itemnum = 20
     return itemnum, mrhours, endwith #  返回了一个列表
 
-def generate_tasks(project_name, sstr):
+
+def generate_tasks(project_name, sstr): #
+    for
+    
     config = generate_task_config(project_name, sstr)
     mh.add_new_task(project_name, sstr, ut.time_str("full"), config[0], config[1], config[2], 0)
+
+
 
 
 
@@ -62,4 +67,4 @@ def run_task(startTime, loopTime):  # 多少时间后开始运行
 
 
 if __name__ == '__main__':
-    pass
+    print generate_task_config("big", "lung,cancer")

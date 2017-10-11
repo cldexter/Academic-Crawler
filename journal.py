@@ -106,8 +106,8 @@ def journal_detail(journal_name): # 使用使用的函数，自带储存功能
         if journal_if and journal_zone:
             mh.add_journal(journal_official_name, journal_if, journal_zone) # 注意只储存大写
             msg.log("", ut.time_str("full"), "retrieved web data: " + journal_official_name, "debug")
-            else:
-                msg.log("", ut.time_str("full"), "no if and jzone info: " + journal_official_name, "debug")
+        else:
+            msg.log("", ut.time_str("full"), "no if and jzone info: " + journal_official_name, "debug")
         data = journal_official_name, journal_if, journal_zone
         return data
 

@@ -10,15 +10,6 @@
    Development Note：
    1.为了减少其它函数复杂性，所有BSON构成在这里进行
 -------------------------------------------------
-   Change Log:
-
--------------------------------------------------
-   格式：数据库名称
-   论文内容在["papers"]["count"]（不分项目）
-   项目在["papers"]["project"]
-   任务在["papers"]["task"]
-   运行日志在["papers"]["log"]
--------------------------------------------------
 """
 
 from pymongo import *
@@ -128,7 +119,7 @@ def del_project(project_name):
 
 
 # 对search string做指定操作
-def add_search_str(project_name, sstr, ctime, type, loop = 1, frequency = 24):  # 搜索词条专门是一个列表
+def add_new_search_str(project_name, sstr, ctime, type, loop = 1, frequency = 24):  # 搜索词条专门是一个列表
     data = {"project": project_name, "sstr": sstr, "ctime": ctime, "type": type, "loop": loop, "frequency": frequency}
     get_db("sstr").insert_one(data)
 
@@ -157,9 +148,20 @@ def count_task(project_name, sstr):
     number = get_db("task").count({"project": project_name, "sstr": sstr})
     return number
 
+def count_project_task(project_name): # 数一下该项目下运行过多少task
+    number = get_db("task").count({"project": project_name})
+    return number
+
+def finish_task(project_name, sstr): # 把任务标记为完成
+    data = {"status": 1}
+    get_db("task").update_one({"project": project_name, "sstr": sstr}, {"$set": data})
+
 
 
 if __name__ == "__main__":
     # add_new_project("cancer", "aim to find the latest cancer research progress", "2017-10-10 10:10:10")
-    add_new_task("cancer", "breast,cancer", "2017-10-10 10:10:10", 5000, 6, 0, 0)
-    print count_task("cancer", "breast,cancer")
+    # add_new_search_str("cancer", "lung,cancer", "2017-10-10 10:10:10", "key_word")
+    # add_new_task("cancer", "breast,cancer", "2017-10-10 10:10:10", 5000, 6, 0, 0)
+    # finish_task("cancer", "breast,cancer")
+    # print count_task("cancer", "breast,cancer")
+    pass
