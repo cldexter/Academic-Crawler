@@ -25,19 +25,10 @@ from pymongo import *
 
 client = MongoClient('mongodb://localhost:27017/')  # 固定的不要变动
 
-
 # 获取各个集合路径; 注意这里的db不是database，是collection
-def get_db(data_type):  
-    if data_type == "content":
-        database = client["papers"]["content"]
-    elif data_type == "project":
-        database = client["papers"]["project"]
-    elif data_type == "log":
-        database = client["papers"]["log"]
-    elif data_type == "task":
-        database = client["papers"]["task"]
-    elif data_type == "journal":
-        database = client["papers"]["journal"]
+def get_db(data_type):
+    if data_type in ["content", "project", "log", "task", "journal", "sstr"]:
+        database = client["papers"][data_type]
     else:
         database = "error"
     return database
@@ -126,7 +117,7 @@ def read_project_detail(project_name):
     return data    
 
 
-def add_project(project_name, project_description, ctime):
+def add_new_project(project_name, project_description, ctime):
     data = {"project": project_name,
             "description": project_description, "ctime": ctime}
     get_db("project").insert_one(data)
@@ -135,19 +126,40 @@ def add_project(project_name, project_description, ctime):
 def del_project(project_name):
     get_db("project").delete_one({'project': project_name})
 
+
 # 对search string做指定操作
-
-
-def add_search_str(project_name, sstr, ctime):  # 搜索词条专门是一个列表
-    data = {"project": project_name, "sstr": sstr, "ctime": ctime}
+def add_search_str(project_name, sstr, ctime, type, loop = 1, frequency = 24):  # 搜索词条专门是一个列表
+    data = {"project": project_name, "sstr": sstr, "ctime": ctime, "type": type, "loop": loop, "frequency": frequency}
     get_db("sstr").insert_one(data)
 
 
-def del_search_str(sstr):
-    get_db("sstr").delete_one({'sstr': sstr})
+def del_search_str(project_name, sstr):
+    get_db("sstr").delete_one({"project": project_name, 'sstr': sstr})
 
 
-def
+def read_search_str_all(project_name):
+    sstr = []
+    for record in get_db("sstr").find({"project": project_name}):
+        sstr.append(record['sstr'], record['ctime'], record['type'], record['loop'], record['frequency'])
+    return sstr 
+
+def count_search_str(project_name):
+    number = get_db('sstr').count({"project": project_name})
+    return number
+
+
+# 对task做指定操作
+def add_new_task(project_name, sstr, ctime, itemnum, mrhours, endwith = 0, status = 0):  # 搜索词条专门是一个列表
+    data = {"project": project_name, "sstr": sstr,"ctime": ctime, "itemnum": itemnum, "mrhours": mrhours, "endwith": endwith, "status": status}
+    get_db("task").insert_one(data)
+
+def count_task(project_name, sstr):
+    number = get_db("task").count({"project": project_name, "sstr": sstr})
+    return number
+
+
 
 if __name__ == "__main__":
-    print read_journal_detail('JOURNAL OF FOOD SAFETY')
+    # add_new_project("cancer", "aim to find the latest cancer research progress", "2017-10-10 10:10:10")
+    add_new_task("cancer", "breast,cancer", "2017-10-10 10:10:10", 5000, 6, 0, 0)
+    print count_task("cancer", "breast,cancer")

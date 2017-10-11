@@ -3,9 +3,9 @@
 """
 -------------------------------------------------
    File Name: task.py
-   Description: 处理运行任务
+   Description: 生成任务列表
    Author: Dexter Chen
-   Date：2017-09-16
+   Date：2017-10-11
 -------------------------------------------------
    Development Note：
    1. 根据选择，确定需要执行的项目及细节
@@ -16,93 +16,50 @@
    5. 看门狗程序，必要时重启
    6. 记录运行出现的问题
 -------------------------------------------------
-   Change Log:
-   2018-09-16: 
--------------------------------------------------
-   格式：
-   task:
--------------------------------------------------
 """
-import sys
-import os
-import thread
-from threading import Timer
+
 from datetime import date, datetime, timedelta
-import project as pr
-import data_handler as dh
+import mongodb_handler as mh
 import utilities as ut
 
-reload(sys)
-sys.setdefaultencoding('utf8')
 
-task = []
+task_list = []
 
-class Watchdog:  # 看门狗程序，防止运行卡死
-    def __init__(self):
-        ''' Class constructor. The "time" argument has the units of seconds. '''
-        self._time = maxPorcessTime
-        return
+def generate_task_config(project_name, sstr):
+    sstr_number = mh.count_search_str(project_name) #一共有多少个sstr
+    task_number = mh.count_task(project_name, sstr) #本sstr运行过多少次
+    if sstr_number <= 1: # 如果这个是第一个sstr
+        endwith = 0 # 不提前终止
+        else:
+            endwith =1 # 按条件提前终止
+    if task_number <= 1: # 如果是第一次运行
+        mrhours = 6 # 单位是小时
+        itemnum = 5000
+        else:
+            mrhours = 0.1
+            itemnum = 20
+    return itemnum, mrhours, endwith #  返回了一个列表
 
-    def StartWatchdog(self):
-        ''' Starts the watchdog timer. '''
-        self._timer = Timer(self._time, self._WatchdogEvent)
-        self._timer.daemon = True
-        self._timer.start()
-        return
+def generate_tasks(project_name, sstr):
+    config = generate_task_config(project_name, sstr)
+    mh.add_new_task(project_name, sstr, ut.time_str("full"), config[0], config[1], config[2], 0)
 
-    def PetWatchdog(self):
-        ''' Reset watchdog timer. '''
-        self.StopWatchdog()
-        self.StartWatchdog()
-        return
 
-    def _WatchdogEvent(self):
-        cPrint(u'\n ●调 等待太久，程序强制跳过 \n', COLOR.RED)
-        self.StopWatchdog()
-        thread.interrupt_main()
-        return
 
-    def StopWatchdog(self):
-        ''' Stops the watchdog timer. '''
-        self._timer.cancel()
+
+
+
+
+
+def generate_task_list(): # 项目名称，第一个项目几小时后开始，项目间最小间隔
+    pass
 
 def run_task(startTime, loopTime):  # 多少时间后开始运行
-    global currentTime, endTime, timeElapse  # 结束时间是全局的
-    currentTime = datetime.now()  # 刷新一下时间
-    nowTime = ut.time_str()
-    period = timedelta(seconds = loopTime)  # 定义循环间隔
-    if startTime == "":  # 开始时间
-        strStartTime = strNowTime
-    else:
-        strStartTime = startTime
-    runPeriod = timedelta(hours = runTime)
-    endTime = currentTime + runPeriod
-
-    niuniu = Watchdog()  # 生成看门狗
-
-    while True:  # 开始循环
-        currentTime = datetime.now()
-        strCurrentTime = currentTime.strftime('%Y-%m-%d %H:%M:%S')
-        timeElapse = currentTime - nowTime
-        if str(strCurrentTime) > str(strStartTime):  # 只要超过，就运行，不等于，因为往往运行滞后。此步骤增强稳定性
-            niuniu.StartWatchdog()  # 开始看门狗
-            Tasks()
-            nextTime = currentTime + period
-            strStartTime = nextTime.strftime('%Y-%m-%d %H:%M:%S')
-            niuniu.StopWatchdog()  # 喂看门狗
-            continue
-
-def generate_task_list(project_name_list, delay, minimal_interval): # 项目名称，第一个项目几小时后开始，项目间最小间隔
-    for project_name in project_name_list:
-        key_words = dh.text_read(dh.file_name(project_name),"key_words")
-        for key_word in key_words:
-            task = project_name, 
-
+    pass
 
 
 
 
 
 if __name__ == '__main__':
-    print project_read()
-    # print project_name()
+    pass

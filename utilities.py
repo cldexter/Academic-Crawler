@@ -19,6 +19,8 @@
 import re
 import dictionary
 import datetime
+import thread
+from threading import Timer
 
 # 输出时间，带日期和不带; delta_hr 是往后数多少小时，负数往前数
 def time_str(type="full", delta_hr=0):  
@@ -49,6 +51,37 @@ def regexp_replace(data, re_data):
     re_content = re.compile(re_data) # 清除所有html标签
     data = re_content.sub('',data)
     return data
+
+class Watchdog:  # 看门狗程序，防止运行卡死
+    def __init__(self):
+        ''' Class constructor. The "time" argument has the units of seconds. '''
+        self._time = maxPorcessTime
+        return
+
+    def StartWatchdog(self):
+        ''' Starts the watchdog timer. '''
+        self._timer = Timer(self._time, self._WatchdogEvent)
+        self._timer.daemon = True
+        self._timer.start()
+        return
+
+    def PetWatchdog(self):
+        ''' Reset watchdog timer. '''
+        self.StopWatchdog()
+        self.StartWatchdog()
+        return
+
+    def _WatchdogEvent(self):
+        cPrint(u'\n ●调 等待太久，程序强制跳过 \n', COLOR.RED)
+        self.StopWatchdog()
+        thread.interrupt_main()
+        return
+
+    def StopWatchdog(self):
+        ''' Stops the watchdog timer. '''
+        self._timer.cancel()
+
+
 
 
 if __name__ == '__main__':
