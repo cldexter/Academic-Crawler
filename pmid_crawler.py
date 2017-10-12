@@ -21,7 +21,6 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from BeautifulSoup import BeautifulSoup
 
 import agents
 import mongodb_handler as mh
@@ -29,134 +28,149 @@ import journal as jn
 import utilities as ut
 import message as msg
 import stats
+import config
 
-# key_words = key_words  # 输入关键词，关键词是一个集合
-# record_number = record_number  # 需要爬多少个
-# project_name = project_name  # 项目的名字
-# task_name = task_name
+existed_pmid_set = []
 
-request_time_out = 30 # request超时时间
-phantomjs_time_out = 60 # phantom超时时间
-request_refresh_wait = 3 # request刷新等待
-phantomjs_refresh_wait = 5 # 浏览器刷新等待
-
-tries_request = 3
-tries_1st_sp = 3  # 尝试获取第一个页面的次数
-tries_other_sp = 5  # 尝试获取其它每个页面的次数
-
-# sum_page_number = int(math.ceil(record_number / 20))  # 每页20个，计算共多少页
-url = "https://www.ncbi.nlm.nih.gov/pubmed/?term=" + "breast+cancer"  # 最初的查询网址
-
-phantomjs_headers = agents.get_header() # 随机选择一个以供浏览器使用
-pmid_set = mh.read_pmid_all() # 只读一次
+def save_png(browser):
+    browser.save_screenshot(ut.cur_file_dir() + "/browser/" + ut.time_str("time") + ".png" )
 
 
-def crawl_direct():  # 用于直接爬sum-page，只能爬第一页，但是不采用phantomjs，速度快
-    tries = 3 # 尝试3次
-    pmid_set = []
+def parse_url(project, sstr): # 把keyword变成链接形式，临时这样，未来增加内容
+    sstr_type = mh.read_sstr_type(project, sstr)
+    if sstr_type == "key_words":
+        if "," in sstr:
+            sstr = sstr.replace(", ",",") # 防止有空格
+            sstr = sstr.replace(",","%2C") # 换成链接形式
+        else:
+            pass
+    if sstr_type == "expression":
+        pass
+    url = "https://www.ncbi.nlm.nih.gov/pubmed/?term=" + sstr  # 最初的查询网址
+    return url
+
+
+def adjust_record_number(project, sstr, record_number):
+    url = parse_url(project, sstr)
+    tries = config.request_sp_tries # 尝试3次
     while(tries > 0):
         try:
             opener = requests.Session()
-            raw = opener.get(url, timeout=request_time_out, headers=agents.get_header()).text # header仍然可以是随机的              
-            # soup = BeautifulSoup(raw)
-            pmid_set_raw = re.findall("<dd>\\d*?</dd>", raw)
-            for pmid in pmid_set_raw:
-                pmid_set.append(pmid[4:-5])
+            content = opener.get(url, timeout=config.request_time_out, headers=agents.get_header()).text # header仍然可以是随机的              
+            max_record_number_start = content.find("<h3 class=\"result_count left\">Items:") + 37 # 找描述开始地方
+            max_record_number_end = content.find('</h3>', max_record_number_start)
+            record_number_str = content[max_record_number_start:max_record_number_end]
+            max_record_number = int(record_number_str.split(" ")[-1])
+            if max_record_number >= record_number:
+                pass
+            else:
+                record_number = max_record_number
+            return record_number
             break
         except Exception, e:
             print e
             tries -= 1
-            time.sleep(request_refresh_wait)   
+            time.sleep(config.request_refresh_wait)   
     else:
         print "error"
+
+
+def extract_new_pmid(content): # 从文本中提取pmid的通用办法
+    pmid_set = []
+    pmid_raw = re.findall("<dd>\d{8}</dd>", content)
+    for pmid in pmid_raw:
+        pmid = pmid[4:-5] # 去处括号
+        if pmid not in existed_pmid_set:
+            pmid_set.append(pmid)
+        else:
+            pass # 此处未来log为skip 
     return pmid_set
+
+
+def crawl_direct(project, sstr):  # 用于直接爬sum-page，只能爬第一页，但是不采用phantomjs，速度快
+    url = parse_url(project, sstr)
+    tries = config.request_sp_tries # 尝试3次
+    while(tries > 0):
+        try:
+            opener = requests.Session()
+            content = opener.get(url, timeout=config.request_time_out, headers=agents.get_header()).text # header仍然可以是随机的              
+            pmid_list = extract_new_pmid(content) # 提取pmid, 然后排除旧的
+            mh.add_new_pmid_all(project, sstr, ut.time_str("full"), "pm", pmid_list)
+            break
+        except Exception, e:
+            print e
+            tries -= 1
+            time.sleep(config.request_refresh_wait)   
+    else:
+        print "error"
         
 
-def crawl_phantom(sum_page_number):  # 用于使用phantomjs爬取sum-page，可以爬无限页，但是速度慢
-    rest_page_number = 3 # 剩下多少页
-    tries_1st_sp = 3
-    tries_other_sp = 3
+def crawl_phantom(project, sstr, record_number):  # 用于使用phantomjs爬取sum-page，可以爬无限页，但是速度慢
+    url = parse_url(project, sstr)
     
-    if sum_page_number > 1: # 如果页面不超过1个，就不启动浏览器
-        dcap = dict(DesiredCapabilities.PHANTOMJS)  # 设置userAgent
-        dcap["phantomjs.page.settings.userAgent"] = (phantomjs_headers)  # header每次打开phantomjs是随机的，但浏览器关闭前不会变
-        dcap["phantomjs.page.settings.loadImages"] = False  # 不载入图片，以加快速度
-        # browser = webdriver.PhantomJS(executable_path='C:\Python27\Scripts\phantomjs.exe', desired_capabilities=dcap)  # 加载浏览器，windows下使用
-        path = ut.cur_file_dir() + "/browser/phantomjs" # 浏览器地址
-        browser = webdriver.PhantomJS(executable_path=path, desired_capabilities=dcap)  # 加载浏览器
-        browser.set_page_load_timeout(phantomjs_time_out)  # 设定网页加载超时,超过了就不加载
-    while (sum_page_number > 1 and tries_1st_sp > 0):
+    sum_page_number = int(math.ceil(record_number / 20)) # 计算要多少页面可以爬完
+    rest_page_number = sum_page_number # 剩下多少页, 刚开始一样的
+    
+    tries_1st_sp = config.phantom_1st_sp_tries
+
+    phantomjs_headers = agents.get_header() # 随机选择一个以供浏览器使用
+    dcap = dict(DesiredCapabilities.PHANTOMJS)  # 设置userAgent
+    dcap["phantomjs.page.settings.userAgent"] = (phantomjs_headers)  # header每次打开phantomjs是随机的，但浏览器关闭前不会变
+    dcap["phantomjs.page.settings.loadImages"] = False  # 不载入图片，以加快速度
+    # browser = webdriver.PhantomJS(executable_path='C:\Python27\Scripts\phantomjs.exe', desired_capabilities=dcap)  # 加载浏览器，windows下使用
+    path = ut.cur_file_dir() + "/browser/phantomjs" # 浏览器地址
+    browser = webdriver.PhantomJS(executable_path=path, desired_capabilities=dcap)  # 加载浏览器
+    browser.set_page_load_timeout(config.phantom_time_out)  # 设定网页加载超时,超过了就不加载
+    while (tries_1st_sp > 0):
         try:
-            browser.get(url)
-            WebDriverWait(browser, phantomjs_time_out).until(EC.presence_of_element_located((By.ID, "footer")))
-            browser.find_elements_by_name("Display")[2].click()
-            browser.implicitly_wait(1)
-            browser.save_screenshot(ut.cur_file_dir() + "/browser/" + ut.time_str("time") + ".png" )
-            browser.find_element_by_xpath("//*[@id=\"ps200\"]").click()
-            WebDriverWait(browser, phantomjs_time_out).until(EC.presence_of_element_located((By.ID, "footer")))
-            browser.save_screenshot(ut.cur_file_dir() + "/browser/" + ut.time_str("time") + ".png" )
-
-            print "successful"
-            browser.quit()
+            browser.get(url) # 打开链接
+            WebDriverWait(browser, config.phantom_time_out).until(EC.presence_of_element_located((By.ID, "footer"))) # 等待加载完毕的最好方案
+            browser.find_elements_by_name("Display")[2].click() # 找到下拉菜单，点击
+            browser.implicitly_wait(0.5) # 等0.5秒钟，让菜单下拉完成               
+            browser.find_element_by_xpath("//*[@id=\"ps200\"]").click() # 下拉菜单找到200这个值，点击
+            WebDriverWait(browser, config.phantom_time_out).until(EC.presence_of_element_located((By.ID, "footer"))) # 自动刷新页面, 等待刷新完毕
+            pmid_list = extract_new_pmid(browser.page_source)
+            mh.add_new_pmid_all(project, sstr, ut.time_str("full"), "pm", pmid_list) # 把pmid存起来
+            rest_page_number -= 1
             break
-
         except Exception as e:
             tries_1st_sp -= 1
             browser.refresh()
-            browser.implicitly_wait(phantomjs_refresh_wait)
+            browser.implicitly_wait(config.phantom_refresh_wait)
             print e
-            print "refreshing"
     else:
         print "error"
+    while(rest_page_number > 1 and tries_1st_sp > 0):  # 确认需要第二页，如果sum-page只有1页，那就不用再打开; 如果第一页打开失败，也不用打开；从这里开始循环，直到所有的页面都爬完为止
+        tries_other_sp = config.phantom_other_sp_tries
+        while(tries_other_sp > 0):  # 尝试多少次，默认尝试3次，不行就打不开
+            try:
+                browser.find_element_by_link_text("Next >").click()  # 直接就点开“下一页”，从第二页开始
+                WebDriverWait(browser, config.phantom_time_out).until(EC.presence_of_element_located((By.ID, "footer")))
+                pmid_list = extract_new_pmid(browser.page_source)
+                mh.add_new_pmid_all(project, sstr, ut.time_str("full"), "pm", pmid_list)
+                rest_page_number -= 1
+                break
+            except Exception as e:
+                tries_other_sp -= 1                   
+                browser.refresh()
+                browser.implicitly_wait(config.phantom_refresh_wait)
+                print e
+        else:
+            print "error"
+            break
+    if sum_page_number > 1:
+        browser.quit()  # 关闭浏览器。当出现异常时记得在任务浏览器中关闭PhantomJS
 
 
-#     while(rest_page_number > 1 and tries_1st_sp > 0):  # 确认需要第二页，如果sum-page只有1页，那就不用再打开; 如果第一页打开失败，也不用打开；从这里开始循环，直到所有的页面都爬完为止
-#         msg.stat("sum_page", "proc")
-#         tries_other_sp = self.tries_other_sp
-        
-#         while(tries_other_sp > 0):  # 尝试多少次，默认尝试5次，不行就打不开
-#             try:
-#                 browser.find_element_by_link_text("Next >").click()  # 直接就点开“下一页”，从第二页开始
-#                 WebDriverWait(browser, self.phantomjs_time_out).until(EC.presence_of_element_located((By.ID, "footer")))
-                
-#                 msg.display(ut.time_str("time"), "loaded: NO." + str(stats.success_sum_page + 1) + " sum page (phantomjs)", "info")   
-#                 msg.log(self.task_name, ut.time_str("full"), "load sum page: NO." + str(stats.success_sum_page + 1) + " (phantomjs)", "info")
-                                    
-#                 soup = BeautifulSoup(browser.page_source)
-#                 self.author = soup.findAll(name='p', attrs={"class": "desc"})
-#                 self.journal = soup.findAll(name="span", attrs={'class': 'jrnl'})
-#                 self.title = soup.findAll(name='p', attrs={"class": "title"})
-#                 self.issue = soup.findAll(name="p", attrs={'class': 'details'})
-#                 self.pmid = soup.findAll(name="dd")
-#                 self.generate_record()  # 直接产生结果
-
-#                 msg.stat("sum_page", "succ")
-#                 rest_page_number -= 1
-#                 break
-            
-#             except Exception as e:
-#                 tries_other_sp -= 1
-#                 msg.display(ut.time_str("time"), "load retrying: NO." + str(stats.success_sum_page + 1) + " sum page (phantomjs); " + str(tries_other_sp) + " tries left", "notice")
-#                 msg.log(self.task_name, ut.time_str("full"), "retry sum page: NO." + str(stats.success_sum_page + 1) + " (phantomjs)", "notice")
-#                 msg.log(self.task_name, ut.time_str("full"), str(e), "error")
-                
-#                 browser.refresh()
-#                 browser.implicitly_wait(self.phantomjs_refresh_wait)
-
-#         else:
-#             msg.stat("sum_page", "fail")
-#             msg.display(ut.time_str("time"), "load failed: NO." + str(stats.success_sum_page + 1) + " sum page (phantomjs)", "error")
-#             msg.log(self.task_name, ut.time_str("full"), "fail sum page: NO." + str(stats.success_sum_page + 1) + " (phantomjs)", "error")
-#             break
-
-#     if self.sum_page_number > 1:
-#         browser.quit()  # 关闭浏览器。当出现异常时记得在任务浏览器中关闭PhantomJS
-
-# def crawl_run(self):
-#     self.crawl_direct()  # 先爬第一sum-page
-#     self.crawl_phantom()  # 爬剩下的所有页
-
+def crawl_run(project, sstr, record_number):
+    global existed_pmid_set
+    existed_pmid_set = mh.read_pmid_all(project) # 只读一次
+    record_number = adjust_record_number(project, sstr, record_number) # 看看有没有那么多record
+    if record_number <= 20:
+        crawl_direct(project, sstr) # 目标条数小于20时，直接爬
+    else:
+        crawl_phantom(project, sstr, record_number) # 目标条数大于20时，用phantomjs爬
 
 
 if __name__ == '__main__':
-    print crawl_phantom(2)
+    crawl_run("cancer", "lung,cancer", 20)
