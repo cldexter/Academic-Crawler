@@ -66,14 +66,26 @@ def crawl_detail(pmid):  # 爬具体页面
     # full_links_list = []  # 全文链接（不是abstract，是可下载的pdf）
 
 
-    tries = 3  # 尝试获取3次，不成功就返回错误
+    tries = 1  # 尝试获取3次，不成功就返回错误
     while(tries > 0):
         try:
             opener = requests.Session() # 新建了session保存
             content = opener.get(link, timeout=config.request_time_out, headers=agents.get_header()).text # 注意，这里是不断随机换agent的
             selector = etree.HTML(content.encode("utf-8"))
+
+            title_element = selector.xpath("//div[@class = \"rprt abstract\"]//h1")
+            if len(title_element):
+                title = title_element[0].xpath('string(.)')
+
+            author_element = selector.xpath("//div[@class = \"auths\"]//a")
+            authors = []
+            if len(author_element):
+                for author in author_element:
+                    authors.append(author.xpath('string(.)'))
+
             abstract_element = selector.xpath("//*[@id=\"maincontent\"]/div/div[5]/div/div[4]")
-            abstract = abstract_element[0].xpath('string(.)')[8:]
+            if len(abstract_element):
+                abstract = abstract_element[0].xpath('string(.)')[8:]
 
             key_words_element = selector.xpath("//*[@id=\"maincontent\"]/div/div[5]/div/div[5]/p")
             if len(key_words_element):
@@ -81,36 +93,25 @@ def crawl_detail(pmid):  # 爬具体页面
             else:
                 key_words = []
 
-            institues_element = selector.xpath("//*[@id=\"maincontent\"]/div/div[5]/div/div[3]")
+            issue_element = selector.xpath("//div[@class = \"cit\"]")
+            if len(issue_element):
+                issue = issue_element[0].xpath('string(.)')
+
+            institues_element = selector.xpath("//div[@class=\"afflist\"]//dd")
+            institues = []
             if len(institues_element):
-                institues = institues_element[0].xpath('string(.)')[18:].split(".")
-            else:
-                institues = []
+                for institue in institues_element:
+                    institues.append(institue.xpath('string(.)'))
             
+            flink_element = selector.xpath("//div[@class=\"icons portlet\"]//a/@href")
+            flinks = []
+            if len(flink_element):
+                for flink in flink_element:
+                    flinks.append(flink)
             
-            print abstract
-            print key_words
-            print institues
-                            
-            # key_words_raw = soup.findAll(name="div", attrs={"class": "keywords"})
-            # if key_words_raw: # 如果有keyword的话，很多文章是没有
-            #     key_words_raw = str(key_words_raw)[45:-11].replace("; ", ";")
-            #     key_words_list = key_words_raw.split(';')
-            
-            # institues_raw = soup.findAll(name='dl')
-            # if institues_raw: # 如果有institues的话，大部分文章都有
-            #     institues_raw = institues_raw[0]
-            #     institues_raw = re.findall("<dd>.*?</dd>", str(institues_raw))
-            #     for institues in institues_raw:
-            #         institues_list.append(institues[4:-5])
+            print issue
 
-            # full_content = soup.findAll(name='div', attrs={"class": "icons portlet"})      
-            # full_links_raw = re.findall("<a href=.*?ref=", str(full_content))
-            # if full_links_raw: # 如果有全文链接
-            #     for full_link in full_links_raw:
-            #         full_links_list.append(full_link[9:-6].replace("&amp;", "&"))
-
-            # return abstract, key_words_list, institues_list, full_links_list  # 返回的是一个str值和3个集合
+            
             break
         
         except Exception, e:
@@ -123,4 +124,4 @@ def crawl_detail(pmid):  # 爬具体页面
         return 0
 
 if __name__ == '__main__':
-    crawl_detail("28417642")
+    crawl_detail("28538041")
