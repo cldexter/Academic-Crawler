@@ -21,7 +21,7 @@ from __future__ import division  # python除法变来变去的，这句必须放
 import sys
 import re
 import requests
-from BeautifulSoup import BeautifulSoup
+from lxml import etree
 
 import mongodb_handler as mh
 import agents
@@ -76,22 +76,27 @@ def get_jornal_if(journal_official_name):# 查找杂志影响因子、分区, �
     try:
         opener = requests.Session()
         doc = opener.post(url, timeout=20, data=search_str).text
-        soup = BeautifulSoup(doc)
-        table = soup.findAll(name="td", attrs={"style": "border:1px #DDD solid; border-collapse:collapse; text-align:left; padding:8px 8px 8px 8px;"})
-        re_label = re.compile("</?\w+[^>]*>")
-        text = re_label.sub("", str(table)).split(', ')
-        impact_factor = text[2] # 影响因子
-        publication_zone = text[3][0] # 文章分区，只有第一个数字被截取
+        selector = etree.HTML(doc.encode("utf-8"))
+
+        journal_detail_element = selector.xpath("//td[@style=\"border:1px #DDD solid; border-collapse:collapse; text-align:left; padding:8px 8px 8px 8px;\"]")
+        if len(journal_detail_element):
+            impact_factor = journal_detail_element[2].xpath('string(.)')
+            publication_zone = journal_detail_element[3].xpath('string(.)')[0]
+        else:
+            impact_factor = ""
+            publication_zone = ""
+
         msg.log("", ut.time_str("full"), "retrieved if and jzone: " + journal_official_name, "debug")
         return impact_factor, publication_zone
     except Exception, e:
+        print e
         msg.log("", ut.time_str("full"), "retrieved if and jzone: " + journal_official_name, "debug")
         msg.log("", ut.time_str("full"), str(e), "debug")
         return "",""
 
-def journal_detail(journal_name): # 使用使用的函数，自带储存功能
-    washed_journal_name = journal_name_wash(journal_name) # 清洗文本，大写
-    journal_official_name = get_full_name(washed_journal_name) # 清洗后的输入，输出精准名（全大写）
+def journal_detail(journal_name, proxy = None): # 使用使用的函数，自带储存功能
+    washed_journal_name = journal_name_wash(journal_name) # 清洗文本，并大写
+    journal_official_name = get_full_name(washed_journal_name) # 清洗后的输入，输出官方精准名（全大写）
 
     journal_record = mh.read_journal_name_all() # 读取数据库中现有的名字
 
@@ -112,4 +117,4 @@ def journal_detail(journal_name): # 使用使用的函数，自带储存功能
         return data
 
 if __name__ == '__main__':
-    print journal_detail("EUROPEAN JOURNAL OF CANCER CARE")
+    print journal_detail("nature communication")

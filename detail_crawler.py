@@ -25,46 +25,8 @@ import stats
 import config
 
 
-# def generate_record(self):  # 从抓取的原始素材产生记录
-#     title_start_with = "linksrc=docsum_title\">"  # 标记查找标题开头
-#     title_end_with = "</a>"  # 查找标题的结尾
-#     journal_start_with = 'title='  # 查找期刊开头
-#     journal_end_with = '\">'  # 查找期刊结尾
-    
-#     m = 0
-#     while(m < len(self.pmid)):  # 有多少重复多少
-#         pmid = str(self.pmid[m])[4:-5]  # 先找到pmid，再决定要不要下一步
-#         if not(self.pmid_check(pmid)):  # 如果之前没有这篇文章
-#             author = str(self.author[m])[16:-4]
-#             author_list =  author.split(", ") # 作者列表
-
-#             title_start = str(self.title[m]).find(title_start_with) + 22
-#             title = str(self.title[m])[title_start:-8].replace('<b>', '').replace('</b>', '')  # 论文名
-
-#             issue = re.search("[1-2][09][0-9]{2}", str(self.issue[m])).group(0)  # 刊号，即年份
-
-#             journal_end = str(self.journal[m]).find(journal_end_with)  # 期刊结尾位置
-#             journal = str(self.journal[m])[26:journal_end].replace('<b>', '').replace('</b>', '')  # 期刊名
-#             journal_detail = jn.journal_detail(journal) # 获取期刊的正式名称，影响因子及分区信息
-
-#             paper_detail = self.crawl_detail(pmid)  # 获取文章abstract，keyword列表，机构列表和全文链接列表
-
-#             if paper_detail:  # 如果能够返回正确的abstract，记录；否则留给下一次抓取（不记录，视作新论文）
-#                 mh.add_new_content(self.project_name, self.key_words, ut.time_str("full"), "pm", pmid, title, author_list, journal, journal_detail[0], journal_detail[1], journal_detail[2], issue, str(paper_detail[0]), paper_detail[1], paper_detail[2], paper_detail[3])
-#                 self.pmid_set.append(pmid) # 把刚抓的这篇pmid加入pmid list
-#                 #这里的 paper_detail[0]是这篇文章的abstract,[1]是keywords,[2]是机构列表 [4]是全文下载的链接合集
-
-
-#         else:
-#             pass
-#         m += 1    
-
 def crawl_detail(pmid):  # 爬具体页面   
     link = "https://www.ncbi.nlm.nih.gov/pubmed/" + pmid
-    # key_words_list = []  # 关键词合集
-    # institues_list = []  # 机构名称
-    # full_links_list = []  # 全文链接（不是abstract，是可下载的pdf）
-
 
     tries = 1  # 尝试获取3次，不成功就返回错误
     while(tries > 0):
@@ -83,6 +45,10 @@ def crawl_detail(pmid):  # 爬具体页面
                 for author in author_element:
                     authors.append(author.xpath('string(.)'))
 
+            journal_element = selector.xpath("//a[@alsec=\"jour\"]/@title")
+            if len(journal_element):
+                journal = journal_element[0]
+
             abstract_element = selector.xpath("//*[@id=\"maincontent\"]/div/div[5]/div/div[4]")
             if len(abstract_element):
                 abstract = abstract_element[0].xpath('string(.)')[8:]
@@ -95,7 +61,9 @@ def crawl_detail(pmid):  # 爬具体页面
 
             issue_element = selector.xpath("//div[@class = \"cit\"]")
             if len(issue_element):
-                issue = issue_element[0].xpath('string(.)')
+                issue_raw = issue_element[0].xpath('string(.)')
+                issue_start = issue_raw.find(".")
+                issue = issue_raw[issue_start + 2:issue_start + 6]
 
             institues_element = selector.xpath("//div[@class=\"afflist\"]//dd")
             institues = []
