@@ -96,10 +96,10 @@ def read_empty_pmid(project):  # 读取只有pmid，无内容的pmid以供抓取
     return pmids
 
 
-def add_new_content(pmid, title, author, journal, ojournal, impact_factor, jzone, issue, abstract, keyword, institue, flink):  # 实际上是把之前pmid的记录更新了
+def add_new_content(pmid, title, author, journal, ojournal, impact_factor, jzone, issue, abstract, keyword, institue, country, flink):  # 实际上是把之前pmid的记录更新了
     data = {"status": 2, "title": title, "author": author, "journal": journal, "ojournal": ojournal, "if": impact_factor, "jzone": jzone,
-            "issue": issue, "abstract": abstract, "keyword": keyword, "institue": institue, "irank": "", "country": "", "flink": flink}
-    get_db("content").update_one({'pmid': pmid}, {"$set": data})
+            "issue": issue, "abstract": abstract, "keyword": keyword, "institue": institue, "irank": "", "country": country, "flink": flink}
+    get_db("content").update_one({'pmid': int(pmid)}, {"$set": data})
 
 
 def add_new_comments(pmid, quality, usefulness, highlight, comment):  # 实际上是把之前pmid的记录更新了
@@ -202,7 +202,8 @@ def finish_task(project, sstr):  # 把任务标记为完成
 
 if __name__ == "__main__":
     # add_new_project("cancer", "aim to find the latest cancer research progress", "2017-10-10 10:10:10")
-    add_new_sstr("cancer", "lung,cancer", "2017-10-10 10:10:10", "key_word")
+    # add_new_sstr("cancer", "lung,cancer", "2017-10-10 10:10:10", "key_word")
     # add_new_task("cancer", "breast,cancer", "2017-10-10 10:10:10", 5000, 6, 0, 0)
     # finish_task("cancer", "breast,cancer")
     # print count_task("cancer", "breast,cancer")
+    add_new_pmid("cancer", "lung,cancer", "2017-10-10 10:10:10", "pm", 29027110)

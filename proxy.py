@@ -16,44 +16,54 @@
 -------------------------------------------------
 """
 
+import os
 import requests
 import utilities as ut
 
-proxy_pool = [] # 每个proxy = 获得时间、最后一次成功使用时间、使用次数、失败次数
+proxy_pool = []  # 每个proxy = 获得时间、最后一次成功使用时间、使用次数、失败次数
 
-max_tried = 10 # 准许每个代理IP最多失败次数
-max_used = 1000 # 一天内最大的使用次数
-proxy_pool_size = 5 # 代理池里面的IP数量
+max_fail = 30  # 准许每个代理IP最多失败次数
+max_c_fail = 3 # 准许每个代理连续失败次数
+max_used = 2000  # 一天内最大的使用次数
+proxy_pool_size = 3  # 代理池里面的IP数量
 
-def get_proxy(proxy_number):
-    api_url = "http://vtp.daxiangdaili.com/ip/?tid=559131754091145&num=" + str(proxy_number) + "&delay=1&sortby=time"
+
+def retrieve_proxy(proxy_number):
+    api_url = "http://vtp.daxiangdaili.com/ip/?tid=559131754091145&num=" + \
+        str(proxy_number) + "&delay=1&sortby=time"
     proxies = requests.get(api_url, timeout=10).text
     for proxy in proxies.split("\n"):
-        if 
-        proxy_str = ut.time_str("full"),"",proxy,0,0
-        proxy_pool.append(proxy_str)
+        proxy_record = ut.time_str("full"), proxy, 0, 0, 0
+        proxy_pool.append(proxy_record)
 
-def is_usable(proxy_record): # 检测是否还能那个用
-    if int(proxy_record[3]) > max_tried:
+
+def is_usable(proxy_record):  # 检测是否还能那个用
+    if int(proxy_record[2]) < max_used and proxy_record[3] < max_fail and proxy_record[4] < max_c_fail: # 超出最大量、连续最多失败次、失败总次数都要了
+        return True
+    else:
         return False
-    else:
-        return True
 
-def is_not_overused(proxy_record): # 检测是否用太多了
-    if int(proxy_record[2]) > max_used:
-        return False # 大于最大限制，抛弃不用
-    else:
-        return True
 
 def update_pool():
     global proxy_pool
     proxy_pool = filter(is_usable, proxy_pool)
-    proxy_pool = filter(is_not_overused, proxy_pool)
     if len(proxy_pool) < proxy_pool_size:
-        get_proxy(proxy_pool_size - len(proxy_pool)) # 缺多少，补多少
-    proxy_pool = sorted(proxy_pool, key = lambda x:x[2]) # 按照使用次数排序，用的最少的最先用
+        retrieve_proxy(proxy_pool_size - len(proxy_pool))  # 缺多少，补多少
+    proxy_pool = sorted(proxy_pool, key=lambda x: x[2])  # 按照使用次数排序，用的最少的最先用
 
-def 
+
+def is_online():
+    status = os.system("ping -c 1 www.163.com")
+    if status == 0:
+        return True
+    else:
+        return False
+
+def get_proxy(): # 这里是在程序中获得proxy
+    update_pool()
+    proxy_pool[0][2] += 1 # 增加用了1次
+    return proxy_pool[0]
+
 
 if __name__ == '__main__':
-    print get_proxy(2)
+    is_online()

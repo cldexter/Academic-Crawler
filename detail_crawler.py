@@ -23,10 +23,11 @@ import utilities as ut
 import message as msg
 import stats
 import config
+import dictionary
 
 
-def crawl_detail(pmid):  # 爬具体页面   
-    link = "https://www.ncbi.nlm.nih.gov/pubmed/" + pmid
+def crawl_detail(pmid, proxy=None):  # 爬具体页面   
+    link = "https://www.ncbi.nlm.nih.gov/pubmed/" + str(pmid)
 
     tries = 1  # 尝试获取3次，不成功就返回错误
     while(tries > 0):
@@ -48,7 +49,12 @@ def crawl_detail(pmid):  # 爬具体页面
             journal_element = selector.xpath("//a[@alsec=\"jour\"]/@title")
             if len(journal_element):
                 journal = journal_element[0]
-
+                if journal:
+                    journal_detail = jn.journal_detail(journal)
+                    ojournal = journal_detail[0]
+                    journal_if = journal_detail[1]
+                    journal_zone = journal_detail[2]
+            
             abstract_element = selector.xpath("//*[@id=\"maincontent\"]/div/div[5]/div/div[4]")
             if len(abstract_element):
                 abstract = abstract_element[0].xpath('string(.)')[8:]
@@ -59,7 +65,7 @@ def crawl_detail(pmid):  # 爬具体页面
             else:
                 key_words = []
 
-            issue_element = selector.xpath("//div[@class = \"cit\"]")
+            issue_element = selector.xpath("//div[@class = \"cit\"]") # 年份
             if len(issue_element):
                 issue_raw = issue_element[0].xpath('string(.)')
                 issue_start = issue_raw.find(".")
@@ -67,23 +73,30 @@ def crawl_detail(pmid):  # 爬具体页面
 
             institues_element = selector.xpath("//div[@class=\"afflist\"]//dd")
             institues = []
+            countries = []
             if len(institues_element):
                 for institue in institues_element:
                     institues.append(institue.xpath('string(.)'))
-            
+                    institue_name = institue.xpath('string(.)')
+                    country = institue_name.split(", ")[-1].replace(".","") # 定位最后一个单词（国家）
+                    if country not in countries:
+                        if country in dictionary.country_name:
+                            countries.append(country)
+
+
             flink_element = selector.xpath("//div[@class=\"icons portlet\"]//a/@href")
             flinks = []
             if len(flink_element):
                 for flink in flink_element:
                     flinks.append(flink)
             
-            print issue
 
-            
+            mh.add_new_content(pmid, title, authors, journal, ojournal, journal_if, journal_zone, issue, abstract, key_words, institues, countries, flinks)
+            msg.log("", "2017-10-10 10:10:10", "added", "debug")
+
             break
         
         except Exception, e:
-            print e
             tries -= 1
             time.sleep(config.request_refresh_wait)  # 如果抓不成功，就先休息3秒钟
     
@@ -92,4 +105,4 @@ def crawl_detail(pmid):  # 爬具体页面
         return 0
 
 if __name__ == '__main__':
-    crawl_detail("28538041")
+    crawl_detail(29027110)
