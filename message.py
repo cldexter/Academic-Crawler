@@ -18,23 +18,34 @@
 import mongodb_handler as mh
 import screen
 import stats
+import utilities as ut
 
 display_protocol = 9 # 定义哪种显示方法
 log_protocol = 9 # 定义哪种记录方法
 
-def log(task, ctime, loginfo, logtype): # 用于日志的信息
+info_code = {
+    "101":"retrieved record successfully"
+}
+
+
+def msg(info, info_type, *args): #*args 表明要执行的程序，可以是一个或者多个：log，display，stat
+    for function in *args:
+        function(ut.time_str("full"), info, info_type)
+
+    
+def log(ctime, loginfo, logtype): # 用于日志的信息
     if log_protocol == 9:
-        mh.add_new_log(task, ctime, loginfo, logtype)
+        mh.add_new_log(ctime, loginfo, logtype)
     elif log_protocol == 5 and logtype in ["important", "error", "notice", "debug", "info"]:
-        mh.add_new_log(task, ctime, loginfo, logtype)
+        mh.add_new_log(ctime, loginfo, logtype)
     elif log_protocol == 4 and logtype in ["important", "error", "notice", "info"]:
-        mh.add_new_log(task, ctime, loginfo, logtype)
+        mh.add_new_log(ctime, loginfo, logtype)
     elif log_protocol == 3 and logtype in ["important", "error", "notice"]:
-        mh.add_new_log(task, ctime, loginfo, logtype)
+        mh.add_new_log(ctime, loginfo, logtype)
     elif log_protocol == 2 and logtype in ["important", "error"]:
-        mh.add_new_log(task, ctime, loginfo, logtype)
+        mh.add_new_log(ctime, loginfo, logtype)
     elif log_protocol == 1 and logtype == "important":
-        mh.add_new_log(task, ctime, loginfo, logtype)
+        mh.add_new_log(ctime, loginfo, logtype)
     else:
         pass
 
@@ -54,7 +65,7 @@ def display(ctime, msg, msgtype): # 用于显示的信息
     else:
         pass
 
-def stat(stats_info, stats_infotype): # 用于统计的信息
+def stat(ctime, stats_info, stats_infotype): # 用于统计的信息
     if stats_infotype ==  "succ":
         if stats_info == "sum_page":
             stats.success_sum_page += 1

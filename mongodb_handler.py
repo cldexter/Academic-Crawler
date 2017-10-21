@@ -99,7 +99,7 @@ def read_empty_pmid(project):  # 读取只有pmid，无内容的pmid以供抓取
 def add_new_content(pmid, title, author, journal, ojournal, impact_factor, jzone, issue, abstract, keyword, institue, country, flink):  # 实际上是把之前pmid的记录更新了
     data = {"status": 2, "title": title, "author": author, "journal": journal, "ojournal": ojournal, "if": impact_factor, "jzone": jzone,
             "issue": issue, "abstract": abstract, "keyword": keyword, "institue": institue, "irank": "", "country": country, "flink": flink}
-    get_db("content").update_one({'pmid': int(pmid)}, {"$set": data})
+    get_db("content").update_one({'pmid': pmid}, {"$set": data})
 
 
 def add_new_comments(pmid, quality, usefulness, highlight, comment):  # 实际上是把之前pmid的记录更新了
