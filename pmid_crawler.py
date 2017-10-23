@@ -68,11 +68,9 @@ def adjust_record_number(project, sstr, record_number):
             return record_number
             break
         except Exception, e:
-            print e
             tries -= 1
             time.sleep(config.request_refresh_wait)   
     else:
-        print "error"
 
 
 def extract_new_pmid(content): # 从文本中提取pmid的通用办法
@@ -83,7 +81,7 @@ def extract_new_pmid(content): # 从文本中提取pmid的通用办法
         if pmid not in existed_pmid_set:
             pmid_set.append(pmid)
         else:
-            pass # 此处未来log为skip 
+            pass
     return pmid_set
 
 

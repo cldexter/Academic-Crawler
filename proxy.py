@@ -66,4 +66,5 @@ def get_proxy(): # 这里是在程序中获得proxy
 
 
 if __name__ == '__main__':
-    is_online()
+    retrieve_proxy(1)
+    print proxy_pool
