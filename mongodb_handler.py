@@ -113,9 +113,8 @@ def del_content(pmid):
 
 
 # 对log做制定操作
-def add_new_log(task, ctime, loginfo, logtype):
-    data = {"task": task, "ctime": ctime,
-            "loginfo": loginfo, "logtype": logtype}
+def add_new_log(when, who, identifier, action, result, info_type):
+    data = {"ctime": when, "who": who, "identifier": identifier, "action": action, "result": result, "info_type": info_type}
     get_db('log').insert_one(data)
 
 
