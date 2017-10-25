@@ -20,8 +20,8 @@ import screen
 import stats
 import utilities as ut
 
-display_protocol = 4 # 定义哪种显示方法
-log_protocol = 4 # 定义哪种记录方法
+display_protocol = 5 # 定义哪种显示方法
+log_protocol = 5 # 定义哪种记录方法
 
 def msg(who, identifier, action, result, info_type, *args):
     '''*args可以为log, display, stat一个或多个'''
@@ -34,7 +34,7 @@ def log(when, who, identifier, action, result, info_type): # 用于日志的信�
         mh.add_new_log(when, who, identifier, action, result, info_type)
     elif log_protocol == 5 and info_type in ["important", "error", "notice", "debug", "info"]:
         mh.add_new_log(when, who, identifier, action, result, info_type)
-    elif log_protocol == 4 and info_type in ["important", "error", "notice", "debug"]:
+    elif log_protocol == 4 and info_type in ["important", "error", "notice", "info"]:
         mh.add_new_log(when, who, identifier, action, result, info_type)
     elif log_protocol == 3 and info_type in ["important", "error", "notice"]:
         mh.add_new_log(when, who, identifier, action, result, info_type)
@@ -50,7 +50,7 @@ def display(when, who, identifier, action, result, info_type): # 用于显示的
         screen.add_new_display(when, who, identifier, action, result, info_type)
     elif display_protocol == 5 and info_type in ["important", "error", "notice", "debug", "info"]: 
         screen.add_new_display(when, who, identifier, action, result, info_type)
-    elif display_protocol == 4 and info_type in ["important", "error", "notice", "debug"]: 
+    elif display_protocol == 4 and info_type in ["important", "error", "notice", "info"]: 
         screen.add_new_display(when, who, identifier, action, result, info_type)
     elif display_protocol == 3 and info_type in ["important", "error", "notice"]: 
         screen.add_new_display(when, who, identifier, action, result, info_type)

@@ -89,9 +89,9 @@ def add_new_pmid_all(project, sstr, ctime, source, pmid_list):  # 同时生成�
     get_db("content").insert_many(data_list)
 
 
-def read_empty_pmid(project):  # 读取只有pmid，无内容的pmid以供抓取
+def read_empty_pmid(project, pmid_number):  # 读取只有pmid，无内容的pmid以供抓取
     pmids = []
-    for record in get_db("content").find({"project": project, "status": 1}):
+    for record in get_db("content").find({"project": project, "status": 1}).limit(pmid_number):
         pmids.append(record['pmid'])
     return pmids
 
@@ -99,17 +99,17 @@ def read_empty_pmid(project):  # 读取只有pmid，无内容的pmid以供抓取
 def add_new_content(pmid, title, author, journal, ojournal, impact_factor, jzone, issue, abstract, keyword, institue, country, flink):  # 实际上是把之前pmid的记录更新了
     data = {"status": 2, "title": title, "author": author, "journal": journal, "ojournal": ojournal, "if": impact_factor, "jzone": jzone,
             "issue": issue, "abstract": abstract, "keyword": keyword, "institue": institue, "irank": "", "country": country, "flink": flink}
-    get_db("content").update_one({'pmid': pmid}, {"$set": data})
+    get_db("content").update_one({'pmid': str(pmid)}, {"$set": data})
 
 
 def add_new_comments(pmid, quality, usefulness, highlight, comment):  # 实际上是把之前pmid的记录更新了
     data = {"quality": quality, "usefulness": usefulness,
             "highlight": highlight, "comment": comment}
-    get_db("content").update_one({'pmid': pmid}, {"$set": data})
+    get_db("content").update_one({'pmid': str(pmid)}, {"$set": data})
 
 
 def del_content(pmid):
-    get_db("content").delete_one({'pmid': pmid})
+    get_db("content").delete_one({'pmid': str(pmid)})
 
 
 # 对log做制定操作
@@ -205,4 +205,5 @@ if __name__ == "__main__":
     # add_new_task("cancer", "breast,cancer", "2017-10-10 10:10:10", 5000, 6, 0, 0)
     # finish_task("cancer", "breast,cancer")
     # print count_task("cancer", "breast,cancer")
-    add_new_pmid("cancer", "lung,cancer", "2017-10-10 10:10:10", "pm", 29027110)
+    # add_new_pmid("cancer", "lung,cancer", "2017-10-10 10:10:10", "pm", 29027110)
+    print read_empty_pmid("cancer", 100)

@@ -27,6 +27,7 @@ import mongodb_handler as mh
 import agents
 import message as msg
 import utilities as ut
+import config
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -46,23 +47,27 @@ def journal_name_wash(journal_name):  # 原始名称清洗（主要针对各种�
 def get_full_name(journal_name, proxy=None):  # 查找杂志的全名，支持模糊查询，只输出最符合的那个
     url = "http://www.letpub.com.cn/journalappAjax.php?querytype=autojournal&term=" + \
         journal_name.replace("&", "%26").replace(" ", "+")
-    try:
-        opener = requests.Session()
-        doc = opener.get(url, timeout=20, headers=agents.get_header()).text
-        list = doc.split('},{')  # 获取列表，但是只有最match的被采纳
-        journal_name_start = list[0].find("label") + 8
-        journal_name_end = list[0].find("\",\"", journal_name_start)
-        journal_name = list[0][journal_name_start:journal_name_end]
-        journal_name = journal_name.upper()  # 查找到的名字也是全大写
-        msg.log("", ut.time_str("full"),
-                "retrieved official journal name: " + journal_name, "debug")
-        return journal_name
-    except Exception, e:
-        msg.log("", ut.time_str("full"),
-                "failed retreive official journal name: " + journal_name, "debug")
-        msg.log("", ut.time_str("full"), str(e), "debug")
+    tries = config.request_dp_tries
+    while tries > 0:
+        try:
+            opener = requests.Session()
+            doc = opener.get(url, timeout=20, headers=agents.get_header()).text
+            list = doc.split('},{')  # 获取列表，但是只有最match的被采纳
+            journal_name_start = list[0].find("label") + 8
+            journal_name_end = list[0].find("\",\"", journal_name_start)
+            journal_name = list[0][journal_name_start:journal_name_end]
+            journal_name = journal_name.upper()  # 查找到的名字也是全大写
+            msg.msg("journal name", journal_name, "retrieved", "succ", "debug", msg.log, msg.display)
+            return journal_name
+            break
+        except Exception, e:
+            msg.msg("journal name", journal_name, "retrieved", "retried", "debug", msg.display)
+            msg.msg("journal name", journal_name, "retrieved", str(e), "error", msg.log)
+            tries -= 1
+            time.sleep(config.request_refresh_wait)
+    else:
+        msg.msg("journal name", journal_name, "retrieved", "fail", "error", msg.log, msg.display)
         return ""
-
 
 def get_journal_if(journal_official_name, proxy=None):  # 查找杂志影响因子、分区, 要求输入精准
     url = "http://www.letpub.com.cn/index.php?page=journalapp&view=search"
@@ -80,28 +85,31 @@ def get_journal_if(journal_official_name, proxy=None):  # 查找杂志影响因�
         "searchopenaccess": "",
         "searchsort": "relevance"}
     search_str["searchname"] = journal_official_name
-    try:
-        opener = requests.Session()
-        doc = opener.post(url, timeout=20, data=search_str).text
-        selector = etree.HTML(doc.encode("utf-8"))
+    tries =  config.request_dp_tries
+    while tries > 0:
+        try:
+            opener = requests.Session()
+            doc = opener.post(url, timeout=20, data=search_str).text
+            selector = etree.HTML(doc.encode("utf-8"))
 
-        journal_detail_element = selector.xpath(
-            "//td[@style=\"border:1px #DDD solid; border-collapse:collapse; text-align:left; padding:8px 8px 8px 8px;\"]")
-        if len(journal_detail_element):
-            impact_factor = journal_detail_element[2].xpath('string(.)')
-            publication_zone = journal_detail_element[3].xpath('string(.)')[0]
-        else:
-            impact_factor = ""
-            publication_zone = ""
-        msg.log("", ut.time_str("full"), "retrieved if and jzone: " +
-                journal_official_name, "debug")
-        return impact_factor, publication_zone
-    except Exception, e:
-        print e
-        msg.log()
-        msg.log("", ut.time_str("full"), "retrieved if and jzone: " +
-                journal_official_name, "debug")
-        msg.log("", ut.time_str("full"), str(e), "debug")
+            journal_detail_element = selector.xpath(
+                "//td[@style=\"border:1px #DDD solid; border-collapse:collapse; text-align:left; padding:8px 8px 8px 8px;\"]")
+            if len(journal_detail_element):
+                impact_factor = journal_detail_element[2].xpath('string(.)')
+                publication_zone = journal_detail_element[3].xpath('string(.)')[0]
+            else:
+                impact_factor = ""
+                publication_zone = ""
+            msg.msg("journal detail", journal_official_name, "retrieved", "succ", "debug", msg.log, msg.display)
+            return impact_factor, publication_zone
+            break
+        except Exception, e:
+            msg.msg("journal detail", journal_official_name, "retrieved", "retried", "debug", msg.display)
+            msg.msg("journal detail", journal_official_name, "retrieved", str(e), "error", msg.log)
+            tries -= 1
+            time.sleep(config.request_refresh_wait)
+    else:
+        msg.msg("journal detail", journal_official_name, "retrieved", "fail", "error", msg.log, msg.display)
         return "", ""
 
 
@@ -114,8 +122,7 @@ def journal_detail(journal_name, proxy=None):  # 使用使用的函数，自带�
 
     if journal_official_name in journal_record:  # 如果数据库中已经有了
         record = mh.read_journal_detail(journal_official_name)  # 直接提取
-        msg.log("", ut.time_str("full"), "retrieved local data: " +
-                journal_official_name, "debug")
+        msg.msg("journal detail", journal_name, "local retrieved", "succ", "debug", msg.log, msg.display)
         return record
     else:
         journal_detail = get_journal_if(journal_official_name)
@@ -124,11 +131,7 @@ def journal_detail(journal_name, proxy=None):  # 使用使用的函数，自带�
         if journal_if and journal_zone:
             mh.add_journal(journal_official_name, journal_if,
                            journal_zone)  # 注意只储存大写
-            msg.log("", ut.time_str("full"), "retrieved web data: " +
-                    journal_official_name, "debug")
-        else:
-            msg.log("", ut.time_str("full"), "no if and jzone info: " +
-                    journal_official_name, "debug")
+            msg.msg("journal detail", journal_name, "web retrieved", "succ", "debug", msg.log, msg.display)
         data = journal_official_name, journal_if, journal_zone
         return data
 

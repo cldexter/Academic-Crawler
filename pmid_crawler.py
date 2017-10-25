@@ -83,7 +83,7 @@ def extract_new_pmid(content): # 从文本中提取pmid的通用办法
     pmid_set = []
     pmid_raw = re.findall("<dd>\d{8}</dd>", content)
     for pmid in pmid_raw:
-        pmid = pmid[4:-5] # 去处括号
+        pmid = str(pmid[4:-5]) # 去处括号
         msg.msg("pmid", str(pmid), "retrieved", "proc", "info", msg.log, msg.display, msg.stat)
         if pmid not in existed_pmid_set:
             pmid_set.append(pmid)
