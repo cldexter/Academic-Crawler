@@ -35,6 +35,7 @@ def get_pmid_list(project, pmid_number):
 def crawl_detail(pmid, proxy=None):  # 爬具体页面
     link = "https://www.ncbi.nlm.nih.gov/pubmed/" + str(pmid)
     tries = config.request_dp_tries  # 根据设定重复次数
+    msg.msg("record", pmid, "retrieved", "proc", "info", msg.display, msg.stat)
     while(tries > 0):
         try:
             authors = []
@@ -79,13 +80,14 @@ def crawl_detail(pmid, proxy=None):  # 爬具体页面
             institues_element = selector.xpath("//div[@class=\"afflist\"]//dd")
             if len(institues_element):
                 for institue in institues_element:
-                    institues.append(institue.xpath('string(.)'))
-                    institue_name = institue.xpath('string(.)')
-                    country = institue_name.split(
-                        ", ")[-1].replace(".", "")  # 定位最后一个单词（国家）
-                    if country not in countries:
-                        if country in dictionary.country_name:
-                            countries.append(country)
+                    institue = institue.xpath('string(.)')
+                    institue = ut.regexp_replace(
+                        institue, ut.re_email_pm)  # 去除pm的email语句
+                    institue = ut.regexp_replace(
+                        institue, ut.re_email_general)  # 去除所有中间的email
+                    institue = institue.replace(" ,", ",")
+                    
+                    institues.append(institue)
             flink_element = selector.xpath(
                 "//div[@class=\"icons portlet\"]//a/@href")
             if len(flink_element):
@@ -117,4 +119,5 @@ def run_crawler_many(pmid_list):
 
 
 if __name__ == '__main__':
+    pmid_list = get_pmid_list("cancer", 200)
     run_crawler_many(pmid_list)

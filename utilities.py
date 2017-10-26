@@ -50,6 +50,8 @@ def dict_replace(data, re_dict):
 re_html = "</?\w+[^>]*>\s?"  # 清除所有html标签
 re_label = "label=\"\"[\w\s]*?\"\">?\s?"  # 清除非html标签
 re_nlmcatagory = "nlmcategory=\"\"[\s\w]+\"\">?\s?"  # 清除nlm标签
+re_email_pm = "Electronic address:.*"
+re_email_general = "[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+"
 
 
 def regexp_replace(data, re_data):
