@@ -13,9 +13,9 @@
 """
 
 from pymongo import *
+import utilities as ut
 
 client = MongoClient('mongodb://localhost:27017/')  # 固定的不要变动
-
 # 获取各个集合路径; 注意这里的db不是database，是collection
 
 
@@ -200,10 +200,10 @@ def finish_task(project, sstr):  # 把任务标记为完成
 
 
 if __name__ == "__main__":
-    # add_new_project("cancer", "aim to find the latest cancer research progress", "2017-10-10 10:10:10")
-    # add_new_sstr("cancer", "lung,cancer", "2017-10-10 10:10:10", "key_word")
+    # add_new_project("organ on chip", "organ simulator, organ on chip", ut.time_str("full"))
+    add_new_sstr("organ on chip", "lab,on,chip", ut.time_str("full"), "key_word")
     # add_new_task("cancer", "breast,cancer", "2017-10-10 10:10:10", 5000, 6, 0, 0)
     # finish_task("cancer", "breast,cancer")
     # print count_task("cancer", "breast,cancer")
     # add_new_pmid("cancer", "lung,cancer", "2017-10-10 10:10:10", "pm", 29027110)
-    print read_empty_pmid("cancer", 100)
+    # print read_empty_pmid("cancer", 100)

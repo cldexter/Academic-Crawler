@@ -134,13 +134,16 @@ def crawl_phantom(project, sstr, record_number):  # 用于使用phantomjs爬取s
     while (tries_1st_sp > 0):
         try:
             browser.get(url) # 打开链接
+            browser.implicitly_wait(5)
             msg.msg("sum page", "1", "loaded", "proc", "info", msg.log, msg.display, msg.stat)
             WebDriverWait(browser, config.phantom_time_out).until(EC.presence_of_element_located((By.ID, "footer"))) # 等待加载完毕的最好方案
             browser.find_elements_by_name("Display")[2].click() # 找到下拉菜单，点击
-            browser.implicitly_wait(1) # 等0.5秒钟，让菜单下拉完成               
+            browser.implicitly_wait(5) # 等0.5秒钟，让菜单下拉完成 
+            time.sleep(3)              
             browser.find_element_by_xpath("//*[@id=\"ps200\"]").click() # 下拉菜单找到200这个值，点击
             WebDriverWait(browser, config.phantom_time_out).until(EC.presence_of_element_located((By.ID, "footer"))) # 自动刷新页面, 等待刷新完毕
             msg.msg("sum page", "1", "display number", "clicked", "debug", msg.display, msg.log)
+            browser.implicitly_wait(5)
             pmid_list = extract_new_pmid(browser.page_source)
             if pmid_list:
                 mh.add_new_pmid_all(project, sstr, ut.time_str("full"), "pm", pmid_list) # 把pmid存起来
@@ -193,4 +196,4 @@ def crawl_run(project, sstr, record_number):
 
 
 if __name__ == '__main__':
-    crawl_run("cancer", "lung,cancer", 2000)
+    crawl_run("organ on chip", "lab,on,chip", 10000)

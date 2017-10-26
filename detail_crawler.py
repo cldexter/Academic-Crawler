@@ -86,8 +86,19 @@ def crawl_detail(pmid, proxy=None):  # 爬具体页面
                     institue = ut.regexp_replace(
                         institue, ut.re_email_general)  # 去除所有中间的email
                     institue = institue.replace(" ,", ",")
-                    
                     institues.append(institue)
+                    institue = institue.replace(", ", ",").replace(".", "")
+                    institue_strs = institue.split(",")
+                    institue_strs.reverse()
+                    i = 0
+                    while i < len(institue_strs):
+                        if institue_strs[i] in dictionary.country_names.keys():
+                            country_name = dictionary.country_names[institue_strs[i]]
+                            if not country_name in countries:
+                                countries.append(country_name)
+                            break
+                        else:
+                            i += 1
             flink_element = selector.xpath(
                 "//div[@class=\"icons portlet\"]//a/@href")
             if len(flink_element):
@@ -119,5 +130,5 @@ def run_crawler_many(pmid_list):
 
 
 if __name__ == '__main__':
-    pmid_list = get_pmid_list("cancer", 200)
+    pmid_list = get_pmid_list("organ on chip", 10000)
     run_crawler_many(pmid_list)
