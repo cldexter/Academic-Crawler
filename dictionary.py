@@ -76,6 +76,8 @@ country_names = {  # 第一个键是文献中出现的名字，第二个规范�
     "Chad": "Chad",
     "Chile": "Chile",
     "China": "China",
+    "PR China": "China",
+    "People's Republic of China": "China",
     "Colombia": "Colombia",
     "Comoros": "Comoros",
     "Democratic Republic of the Congo": "Congo",
@@ -364,3 +366,6 @@ country_names = {  # 第一个键是文献中出现的名字，第二个规范�
     'WI': 'USA',
     'WY': 'USA'
 }
+
+if __name__ == '__main__':
+    print sorted(country_names.keys())

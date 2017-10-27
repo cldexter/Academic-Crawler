@@ -46,22 +46,34 @@ def add_record(data, data_type):
 
 
 # 对杂志的操作
-def read_journal_name_all():
+def read_journal_name_all(): # 读取普通名
     journals = []
     for record in get_db("journal").find():
         journals.append(record['journal'])
     return journals
 
+def read_ojournal_name_all(): # 读取正式名称（必须是网络返回的，全大写，清洗过后的）
+    ojournals = []
+    for record in get_db('journal').find():
+        ojournals.append(record['ojournal'])
+    return ojournals
 
-def read_journal_detail(journal_name):
+
+def read_journal_detail(journal_name): # 使用普通名查询论文
     record = get_db("journal").find_one({"journal": journal_name})
     if record:
-        data = record['journal'], record['if'], record['jzone']
+        data = record['journal'], record['ojournal'], record['if'], record['jzone']
+    return data
+
+def read_ojournal_detail(ojournal_name): # 使用正式名称查询论文
+    record = get_db("journal").find_one({"ojournal": ojournal_name})
+    if record:
+        data = record['journal'], record['ojournal'], record['if'], record['jzone']
     return data
 
 
-def add_journal(journal_name, impact_factor, journal_zone):
-    data = {"journal": journal_name,
+def add_journal(journal_name, ojournal_name, impact_factor, journal_zone):
+    data = {"journal": journal_name, "ojournal": ojournal_name,
             "if": impact_factor, "jzone": journal_zone}
     get_db("journal").insert_one(data)
 

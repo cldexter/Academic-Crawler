@@ -33,6 +33,10 @@ reload(sys)
 sys.setdefaultencoding('utf8')
 
 
+journal_record = mh.read_journal_name_all()  # 数据
+ojournal_record = mh.read_ojournal_name_all() # 读取
+
+
 def journal_name_wash(journal_name):  # 原始名称清洗（主要针对各种括号和标点、解释、注释）
     re_bracket = re.compile("[\\[\\(](.*?)[\\]\\)]")  # 去处括号解释
     re_explaination = re.compile(" ??[:=].*")  # 去处冒号后的解释
@@ -61,15 +65,15 @@ def get_full_name(journal_name, proxy=None):  # 查找杂志的全名，支持�
             return journal_name
             break
         except Exception, e:
-            msg.msg("journal name", journal_name, "retrieved", "retried", "debug", msg.display)
-            msg.msg("journal name", journal_name, "retrieved", str(e), "error", msg.log)
+            msg.msg("journal name", journal_name, "web retrieved", "retried", "debug", msg.display)
+            msg.msg("journal name", journal_name, "web retrieved", str(e), "error", msg.log)
             tries -= 1
             time.sleep(config.request_refresh_wait)
     else:
-        msg.msg("journal name", journal_name, "retrieved", "fail", "error", msg.log, msg.display)
+        msg.msg("journal name", journal_name, "web retrieved", "fail", "error", msg.log, msg.display)
         return ""
 
-def get_journal_if(journal_official_name, proxy=None):  # 查找杂志影响因子、分区, 要求输入精准
+def get_journal_if(ojournal_name, proxy=None):  # 查找杂志影响因子、分区, 要求输入精准
     url = "http://www.letpub.com.cn/index.php?page=journalapp&view=search"
     search_str = {
         "searchname": "",
@@ -84,7 +88,7 @@ def get_journal_if(journal_official_name, proxy=None):  # 查找杂志影响因�
         "searchjcrkind": "",
         "searchopenaccess": "",
         "searchsort": "relevance"}
-    search_str["searchname"] = journal_official_name
+    search_str["searchname"] = ojournal_name
     tries =  config.request_dp_tries
     while tries > 0:
         try:
@@ -100,41 +104,46 @@ def get_journal_if(journal_official_name, proxy=None):  # 查找杂志影响因�
             else:
                 impact_factor = ""
                 publication_zone = ""
-            msg.msg("journal detail", journal_official_name, "retrieved", "succ", "debug", msg.log, msg.display)
+            msg.msg("journal detail", ojournal_name, "web retrieved", "succ", "debug", msg.log, msg.display)
             return impact_factor, publication_zone
             break
         except Exception, e:
-            msg.msg("journal detail", journal_official_name, "retrieved", "retried", "debug", msg.display)
-            msg.msg("journal detail", journal_official_name, "retrieved", str(e), "error", msg.log)
+            msg.msg("journal detail", ojournal_name, "web retrieved", "retried", "debug", msg.display)
+            msg.msg("journal detail", ojournal_name, "web retrieved", str(e), "error", msg.log)
             tries -= 1
             time.sleep(config.request_refresh_wait)
     else:
-        msg.msg("journal detail", journal_official_name, "retrieved", "fail", "error", msg.log, msg.display)
+        msg.msg("journal detail", ojournal_name, "web retrieved", "fail", "error", msg.log, msg.display)
         return "", ""
 
 
 def journal_detail(journal_name, proxy=None):  # 使用使用的函数，自带储存功能
-    washed_journal_name = journal_name_wash(journal_name)  # 清洗文本，并大写
-    journal_official_name = get_full_name(
-        washed_journal_name)  # 清洗后的输入，输出官方精准名（全大写）
-
-    journal_record = mh.read_journal_name_all()  # 读取数据库中现有的名字
-
-    if journal_official_name in journal_record:  # 如果数据库中已经有了
-        record = mh.read_journal_detail(journal_official_name)  # 直接提取
-        msg.msg("journal detail", journal_name, "local retrieved", "succ", "debug", msg.log, msg.display)
+    if journal_name in journal_record: # 如果使用普通名称查询得到
+        record = mh.read_journal_detail(journal_name) # 使用普通名称查询普通名称数据库
+        msg.msg("journal record", journal_name, "local retrieved", "succ", "debug", msg.log, msg.display)
         return record
-    else:
-        journal_detail = get_journal_if(journal_official_name)
-        journal_if = journal_detail[0]
-        journal_zone = journal_detail[1]
-        if journal_if and journal_zone:
-            mh.add_journal(journal_official_name, journal_if,
-                           journal_zone)  # 注意只储存大写
-            msg.msg("journal detail", journal_name, "web retrieved", "succ", "debug", msg.log, msg.display)
-        data = journal_official_name, journal_if, journal_zone
-        return data
+    else: # 如果使用普通名称查询不到，将普通名称通过网络转化为正式名称，再查询正式名称数据库
+        washed_journal_name = journal_name_wash(journal_name)  # 清洗文本，并大写
+        ojournal_name = get_full_name(washed_journal_name)  # 清洗后的输入，输出官方精准名（全大写）
+        if ojournal_name in ojournal_record:  # 如果数据库中已经有了
+            record = mh.read_ojournal_detail(ojournal_name)  # 使用正式名称查询正式名称数据库
+            mh.add_journal(journal_name, record[1], record[2], record[3]) # 新生成一个记录，用新的普通名称
+            journal_record.append(journal_name) # 新的普通名称加到集合
+            msg.msg("journal record", ojournal_name, "local retrieved", "succ", "debug", msg.log, msg.display)
+            return record
+        else: # 都还查不到
+            journal_detail = get_journal_if(ojournal_name) # 通过网络查询（新的杂志）
+            journal_if = journal_detail[0]
+            journal_zone = journal_detail[1]
+            if journal_if and journal_zone: # 这两个数都存在才存
+                mh.add_journal(journal_name, ojournal_name, journal_if, journal_zone)  # 注意只储存大写
+                journal_record.append(journal_name) # 新的普通名称加入集合
+                ojournal_record.append(ojournal_name) # 新的正式名称加入集合
+                msg.msg("journal record", journal_name, "web retrieved", "succ", "debug", msg.log, msg.display)
+            data = journal_name, ojournal_name, journal_if, journal_zone
+            return data
 
 
 if __name__ == '__main__':
-    print journal_detail("Bioinformatics (Oxford, England).")
+    print journal_detail("BIOINFORMATICS")
+    # print journal_record, ojournal_record
