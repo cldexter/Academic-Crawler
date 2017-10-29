@@ -145,5 +145,5 @@ def journal_detail(journal_name, proxy=None):  # 使用使用的函数，自带�
 
 
 if __name__ == '__main__':
-    print journal_detail("BIOINFORMATICS")
-    # print journal_record, ojournal_record
+    # print journal_detail("BIOINFORMATICS")
+    print journal_record, ojournal_record

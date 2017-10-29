@@ -4,6 +4,8 @@
 <head>
   <meta charset="utf-8">
   <title>index</title>
+  <link rel="stylesheet" type="text/css" href="../static/semantic.min.css">
+  <script language="JavaScript" src="../static/semantic.min.js"></script>
   <style>
     html,
     body,
@@ -268,11 +270,11 @@
       font-size: .8em
     }
 
-    .markdown-body {
+    .content {
       padding: 0px 4px;
     }
 
-    .markdown-body h1 {
+    .content h1 {
       position: relative;
       padding-top: 1em;
       padding-bottom: 0.2em;
@@ -280,34 +282,34 @@
       background: url() bottom left repeat-x
     }
 
-    .markdown-body h1 a {
+    .content h1 a {
       text-decoration: none
     }
 
-    .markdown-body h1 a:hover {
+    .content h1 a:hover {
       text-decoration: underline
     }
 
-    .markdown-body h2 {
+    .content h2 {
       padding-top: 0.8em;
       padding-bottom: 0.2em;
       background: url() bottom left repeat-x
     }
 
-    .markdown-body h2:first-child,
-    .markdown-body header+h2 {
+    .content h2:first-child,
+    .content header+h2 {
       padding-top: 4px;
     }
 
-    .markdown-body h2:first-child,
-    .markdown-body header+h2 {
+    .content h2:first-child,
+    .content header+h2 {
       background: none
     }
 
 
 
     p,
-    .markdown-body blockquote,
+    .content blockquote,
     ul,
     ol {
       margin-bottom: 0.8em;
@@ -430,7 +432,7 @@
       font-size: 1.2em
     }
 
-    .markdown-body hr {
+    .content hr {
       height: 0;
       margin: 15px 0;
       overflow: hidden;
@@ -439,19 +441,19 @@
       border-bottom: 1px solid #ddd;
     }
 
-    .markdown-body hr:before {
+    .content hr:before {
       display: table;
       content: "";
     }
 
-    .markdown-body hr:after {
+    .content hr:after {
       display: table;
       clear: both;
       content: "";
     }
 
 
-    .markdown-body table {
+    .content table {
       display: block;
       width: 100%;
       overflow: auto;
@@ -459,26 +461,26 @@
       word-break: keep-all;
     }
 
-    .markdown-body table th {
+    .content table th {
       font-weight: bold;
     }
 
-    .markdown-body table th,
-    .markdown-body table td {
+    .content table th,
+    .content table td {
       padding: 6px 13px;
       border: 1px solid #ddd;
     }
 
-    .markdown-body table tr {
+    .content table tr {
       background-color: #fff;
       border-top: 1px solid #ccc;
     }
 
-    .markdown-body table tr:nth-child(2n) {
+    .content table tr:nth-child(2n) {
       background-color: #f8f8f8;
     }
 
-    .markdown-body blockquote {
+    .content blockquote {
       font-style: italic;
       position: relative;
       font-size: 1.2em;
@@ -487,23 +489,23 @@
       border-left: 4px solid rgba(170, 170, 170, 0.5)
     }
 
-    .markdown-body blockquote cite {
+    .content blockquote cite {
       font-style: italic
     }
 
-    .markdown-body blockquote cite a {
+    .content blockquote cite a {
       color: #aaa !important;
       word-wrap: break-word
     }
 
-    .markdown-body blockquote cite:before {
+    .content blockquote cite:before {
       content: '\2014';
       padding-right: .3em;
       padding-left: .3em;
       color: #aaa
     }
 
-    .markdown-body a {
+    .content a {
       white-space: -moz-pre-wrap;
       white-space: -pre-wrap;
       white-space: -o-pre-wrap;
@@ -517,12 +519,12 @@
       padding-bottom: 1.5em
     }
 
-    .markdown-body {
+    .content {
       overflow: hidden
     }
 
-    .markdown-body>div,
-    .markdown-body>article {
+    .content>div,
+    .content>article {
       width: 100%
     }
 
@@ -588,9 +590,9 @@
     }
 
 
-    .markdown-body img,
-    .markdown-body video,
-    .markdown-body .flash-video {
+    .content img,
+    .content video,
+    .content .flash-video {
       -webkit-border-radius: 0.3em;
       -moz-border-radius: 0.3em;
       -ms-border-radius: 0.3em;
@@ -605,22 +607,22 @@
       border: #fff 0.5em solid;
     }
 
-    .markdown-body img,
-    .markdown-body video {
+    .content img,
+    .content video {
       max-width: 100%;
     }
 
-    .markdown-body video,
-    .markdown-body .flash-video {
+    .content video,
+    .content .flash-video {
       margin: 0 auto 1.5em
     }
 
-    .markdown-body video {
+    .content video {
       display: block;
       width: 100%
     }
 
-    .markdown-body .flash-video>div {
+    .content .flash-video>div {
       position: relative;
       display: block;
       padding-bottom: 56.25%;
@@ -629,9 +631,9 @@
       overflow: hidden
     }
 
-    .markdown-body .flash-video>div iframe,
-    .markdown-body .flash-video>div object,
-    .markdown-body .flash-video>div embed {
+    .content .flash-video>div iframe,
+    .content .flash-video>div object,
+    .content .flash-video>div embed {
       position: absolute;
       top: 0;
       left: 0;
@@ -639,12 +641,12 @@
       height: 100%
     }
 
-    .markdown-body>footer {
+    .content>footer {
       padding-bottom: 2.5em;
       margin-top: 2em
     }
 
-    .markdown-body>footer p.meta {
+    .content>footer p.meta {
       margin-bottom: .8em;
       font-size: .85em;
       clear: both;
@@ -676,7 +678,7 @@
       overflow: auto
     }
 
-    .markdown-body code {
+    .content code {
       background: none;
     }
 
@@ -713,29 +715,6 @@
       background: none;
       border: none
     }
-    /*
-
-
-
-
-
-    .hljs {
-      display: block;
-      overflow-x: auto;
-      padding: 0.5em;
-      background: #fdf6e3;
-      color: #657b83;
-      -webkit-text-size-adjust: none;
-    }
-
-    .hljs-comment,
-    .diff .hljs-header,
-    .hljs-doctype,
-    .hljs-pi,
-    .lisp .hljs-string {
-      color: #93a1a1;
-    }
-    /* Solarized Green */
 
     .hljs-keyword,
     .hljs-winutils,
@@ -833,27 +812,69 @@
 </head>
 
 <body>
-  <div class="markdown-body">
-    <p><code>{{HTML_time}}</code> <code>{{HTML_search_str}}</code> </p>
-    <h2 id="toc_0">{{HTML_title}}</h2>
+{% for item in content %}
+
+<div class="ui large breadcrumb">
+  <a class="section">Home</a>
+  <i class="right chevron icon divider"></i>
+  <a class="section">{{item.project}}</a>
+  <i class="right chevron icon divider"></i>
+  <div class="active section">{{item.sstr}}</div>
+</div>
+
+<div class="ui small basic icon buttons">
+  <button class="ui button">
+    <i class="print icon"></i>
+  </button>
+  <button class="ui button">
+    <i class="save icon"></i>
+  </button>
+  <button class="ui button">
+    <i class="upload icon"></i>
+  </button>
+  <button class="ui button">
+    <i class="download icon"></i>
+  </button>
+</div>
+
+
+
+  <div class="content">
+    <p>
+      <code>{{item.ctime}}</code>
+
+    </p>
+    <h2 id="toc_0">{{item.title}}</h2>
     <h3 id="toc_1">
-      <font color=green>{{HTML_journal}}</font>
+      <font color=green>{{item.journal}}</font>
     </h3>
     <blockquote>
-      <h5 id="toc_2">{{HTML_key_words}}</h5>
+      <h5 id="toc_2">      
+      </h5>
     </blockquote>
-    <p>{{HTML_abstract}}</p>
-    <p><a href={{HTML_pmid_url}}>Abstract Page</a> <a href={{HTML_full_link_url}}>Full Content</a></p>
+    <p>{% for str in item.keyword %} <code> {{str}} </code> {% endfor %}</p>
+    
+
+    <p>{{item.abstract}}</p>
+    <p>
+      <a href={{item.flink}}>Full Content</a>
+    </p>
 
     <h2 id="toc_3"></h2>
     <p>
-      <font color=g ray><br/>{{HTML_author}}</p>
-    <ul>{{HTML_institute}}</ul>
+      <font color=g ray>
+        <br/>{% for str in item.author %}{{str}}; {% endfor %}</p>
+    
+    {% for str in item.institue %}
+    <ul>{{str}}</ul>
+    {% endfor %}
     <h2 id="toc_4"></h2>
     <p>
       </font>
     </p>
+    
   </div>
+{% endfor %}
 </body>
 <footer>
 

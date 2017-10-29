@@ -122,7 +122,8 @@ def crawl_detail(pmid, proxy=None):  # 爬具体页面
         return 0
 
 
-def run_crawler_many(pmid_list):
+def run_crawler_many(project, itemnum):
+    pmid_list = get_pmid_list(project, itemnum)
     pool = Pool(config.detail_crawler_number)  # 进程池大小
     pool.map(crawl_detail, pmid_list)
     pool.close()
@@ -130,5 +131,4 @@ def run_crawler_many(pmid_list):
 
 
 if __name__ == '__main__':
-    pmid_list = get_pmid_list("organ on chip", 10000)
-    run_crawler_many(pmid_list)
+    run_crawler_many("organ on chip", 10000)

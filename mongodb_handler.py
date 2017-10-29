@@ -120,6 +120,13 @@ def add_new_comments(pmid, quality, usefulness, highlight, comment):  # 实际�
     get_db("content").update_one({'pmid': str(pmid)}, {"$set": data})
 
 
+def read_content(project, sstr, number):
+    content = []
+    for record in get_db("content").find({"project":project, "sstr":sstr}).limit(number):
+        content.append(record)
+    return content
+
+
 def del_content(pmid):
     get_db("content").delete_one({'pmid': str(pmid)})
 
@@ -213,9 +220,10 @@ def finish_task(project, sstr):  # 把任务标记为完成
 
 if __name__ == "__main__":
     # add_new_project("organ on chip", "organ simulator, organ on chip", ut.time_str("full"))
-    add_new_sstr("organ on chip", "lab,on,chip", ut.time_str("full"), "key_word")
+    # add_new_sstr("organ on chip", "lab,on,chip", ut.time_str("full"), "key_word")
     # add_new_task("cancer", "breast,cancer", "2017-10-10 10:10:10", 5000, 6, 0, 0)
     # finish_task("cancer", "breast,cancer")
     # print count_task("cancer", "breast,cancer")
     # add_new_pmid("cancer", "lung,cancer", "2017-10-10 10:10:10", "pm", 29027110)
-    # print read_empty_pmid("cancer", 100)
+    # print read_empty_pmid("cancer", 10)
+    print read_content("cancer", "lung,cancer", 1)
