@@ -39,7 +39,7 @@ def save_png(browser):
     msg.msg("screenshot", "", "saved", "succ", "debug", msg.display, msg.log)
 
 
-def parse_url(project, sstr):  # 把keyword变成链接形式，临时这样，未来增加内容
+def parse_url(project, sstr="key_words"):  # 把keyword变成链接形式，临时这样，未来增加内容
     sstr_type = mh.read_sstr_type(project, sstr)
     if sstr_type == "key_words" or sstr_type == "key_word":
         if "," in sstr:

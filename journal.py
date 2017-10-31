@@ -118,74 +118,71 @@ def get_journal_info(ojournal_name, proxy=None):  # 查找杂志影响因子、�
         return "", ""
 
 
-def journal_detail(journal_name, proxy=None):  # 使用使用的函数，自带储存功能
-    if journal_name in journal_name_list:  # 如果使用普通名称查询得到
-        record = mh.read_journal_detail(journal_name)  # 使用普通名称查询普通名称数据库
-        msg.msg("journal record", journal_name, "local retrieved",
-                "succ", "debug", msg.log, msg.display)
+# def journal_detail(journal_name, proxy=None):  # 使用使用的函数，自带储存功能
+#     if journal_name in journal_name_list:  # 如果使用普通名称查询得到
+#         record = mh.read_journal_detail(journal_name)  # 使用普通名称查询普通名称数据库
+#         msg.msg("journal record", journal_name, "local retrieved",
+#                 "succ", "debug", msg.log, msg.display)
+#         return record
+#     else:  # 如果使用普通名称查询不到，将普通名称通过网络转化为正式名称，再查询正式名称数据库
+#         washed_journal_name = journal_name_wash(journal_name)  # 清洗文本，并大写
+#         ojournal_name = get_official_name(
+#             washed_journal_name)  # 清洗后的输入，输出官方精准名（全大写）
+#         if ojournal_name in ojournal_name_list:  # 如果数据库中已经有了
+#             record = mh.read_ojournal_detail(ojournal_name)  # 使用正式名称查询正式名称数据库
+#             # 新生成一个记录，用新的普通名称
+#             mh.add_journal(journal_name, record[1], record[2], record[3])
+#             if not journal_name in journal_name_list:
+#                 journal_name_list.append(journal_name)  # 新的普通名称加到集合
+#             if not ojournal_name in ojournal_name_list:
+#                 ojournal_name_list.append(ojournal_name)
+#             msg.msg("journal record", ojournal_name, "local retrieved",
+#                     "succ", "debug", msg.log, msg.display)
+#             return record
+#         else:  # 都还查不到
+#             journal_info = get_journal_info(ojournal_name)  # 通过网络查询（新的杂志）
+#             journal_if = journal_info[0]
+#             journal_zone = journal_info[1]
+#             if journal_if and journal_zone:  # 这两个数都存在才存
+#                 mh.add_journal(journal_name, ojournal_name,
+#                                journal_if, journal_zone)  # 注意只储存大写
+#                 if not journal_name in journal_name_list:
+#                     journal_name_list.append(journal_name)  # 新的普通名称加入集合
+#                 if not ojournal_name in ojournal_name_list:
+#                     ojournal_name_list.append(ojournal_name)  # 新的正式名称加入集合
+#                 msg.msg("journal record", journal_name, "web retrieved",
+#                         "succ", "debug", msg.log, msg.display)
+#             data = journal_name, ojournal_name, journal_if, journal_zone
+#             return data
+
+
+def journal_detail(journal_name):
+    record = mh.read_journal_detail(journal_name) # 直接试一下
+    if record:
+        msg.msg("journal record", journal_name, "local retrieved","succ", "debug", msg.display)
         return record
-    else:  # 如果使用普通名称查询不到，将普通名称通过网络转化为正式名称，再查询正式名称数据库
-        washed_journal_name = journal_name_wash(journal_name)  # 清洗文本，并大写
-        ojournal_name = get_official_name(
-            washed_journal_name)  # 清洗后的输入，输出官方精准名（全大写）
-        if ojournal_name in ojournal_name_list:  # 如果数据库中已经有了
-            record = mh.read_ojournal_detail(ojournal_name)  # 使用正式名称查询正式名称数据库
-            # 新生成一个记录，用新的普通名称
-            mh.add_journal(journal_name, record[1], record[2], record[3])
-            if not journal_name in journal_name_list:
-                journal_name_list.append(journal_name)  # 新的普通名称加到集合
-            if not ojournal_name in ojournal_name_list:
-                ojournal_name_list.append(ojournal_name)
-            msg.msg("journal record", ojournal_name, "local retrieved",
-                    "succ", "debug", msg.log, msg.display)
+    else:
+        wjournal_name = journal_name_wash(journal_name) # 清洗过的在正式名里试一下
+        record = mh.read_ojournal_detail(wjournal_name)
+        if record:
+            msg.msg("journal record", journal_name, "local retrieved","succ", "debug", msg.display)
             return record
-        else:  # 都还查不到
-            journal_info = get_journal_info(ojournal_name)  # 通过网络查询（新的杂志）
-            journal_if = journal_info[0]
-            journal_zone = journal_info[1]
-            if journal_if and journal_zone:  # 这两个数都存在才存
-                mh.add_journal(journal_name, ojournal_name,
-                               journal_if, journal_zone)  # 注意只储存大写
-                if not journal_name in journal_name_list:
-                    journal_name_list.append(journal_name)  # 新的普通名称加入集合
-                if not ojournal_name in ojournal_name_list:
-                    ojournal_name_list.append(ojournal_name)  # 新的正式名称加入集合
-                msg.msg("journal record", journal_name, "web retrieved",
-                        "succ", "debug", msg.log, msg.display)
-            data = journal_name, ojournal_name, journal_if, journal_zone
-            return data
-
-
-# def journal_detail(journal_name):
-#     global journal_name_list
-#     global ojournal_name_list
-#     if journal_name in journal_name_list:
-#         pass
-#     else:
-#         wjournal_name = journal_name_wash(journal_name)
-#         if wjournal_name in ojournal_name_list:
-#             pass
-#         else:
-#             ojournal_name  = get_official_name(wjournal_name)
-#             if ojournal_name in ojournal_name_list:
-#                 pass
-#             else:
-#                 journal_info = get_journal_info(ojournal_name)
-#                 journal_if = journal_info[0]
-#                 journal_zone = journal_info[1]
-#                 if journal_if and journal_zone:  # 这两个数都存在才存
-#                     mh.add_journal(journal_name, ojournal_name, journal_if, journal_zone)  # 注意只储存大写
-#                     if not journal_name in journal_name_list:
-#                         journal_name_list.append(journal_name)  # 新的普通名称加入集合
-#                     if not ojournal_name in ojournal_name_list:
-#                         ojournal_name_list.append(ojournal_name)  # 新的正式名称加入集合
-#                     msg.msg("journal record", journal_name, "web retrieved",
-#                             "succ", "debug", msg.log, msg.display)
-#                 data = journal_name, ojournal_name, journal_if, journal_zone
-#                 return data
-
+        else:
+            ojournal_name  = get_official_name(wjournal_name) # 网络正式名在正式名里试一下
+            record = mh.read_ojournal_detail(ojournal_name)
+            if record:
+                msg.msg("journal record", journal_name, "web retrieved","succ", "debug", msg.display)
+                return record
+            else:
+                journal_info = get_journal_info(ojournal_name) # 网络正式名在网络查一下
+                journal_if = journal_info[0]
+                journal_zone = journal_info[1]
+                mh.add_journal(journal_name, ojournal_name, journal_if, journal_zone) # 新杂志储存
+                msg.msg("journal record", journal_name, "web retrieved","succ", "debug", msg.display)
+                data = journal_name, ojournal_name, journal_if, journal_zone
+                return data
 
 
 
 if __name__ == '__main__':
-    print journal_detail("nature protocol")
+    print journal_detail("nature protocols:")

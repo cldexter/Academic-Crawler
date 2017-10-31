@@ -62,4 +62,4 @@ def run_task(project, sstr, record_number, endwith, endtime):  # 多少时间后
     msg.msg("crawl detail", project + sstr, "finished", "succ", "important", msg.display, msg.log, msg.stat)
 
 if __name__ == '__main__':
-    run_task("cancer", "lung,cancer", 10000, 1, "2018-10-31 10:10:10")
+    run_task("cancer", "breast,cancer", 1000, 0, "2018-10-31 10:10:10")

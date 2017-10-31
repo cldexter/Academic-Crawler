@@ -65,6 +65,8 @@ def read_journal_detail(journal_name):  # 使用普通名查询论文
     if record:
         data = record['journal'], record['ojournal'], record['if'], record['jzone']
         return data
+    else:
+        return 0
 
 
 def read_ojournal_detail(ojournal_name):  # 使用正式名称查询论文
@@ -72,6 +74,8 @@ def read_ojournal_detail(ojournal_name):  # 使用正式名称查询论文
     if record:
         data = record['journal'], record['ojournal'], record['if'], record['jzone']
         return data
+    else:
+        return 0
 
 
 def add_journal(journal_name, ojournal_name, impact_factor, journal_zone):
@@ -223,7 +227,7 @@ def finish_task(project, sstr):  # 把任务标记为完成
 
 if __name__ == "__main__":
     # add_new_project("organ on chip", "organ simulator, organ on chip", ut.time_str("full"))
-    # add_new_sstr("organ on chip", "lab,on,chip", ut.time_str("full"), "key_word")
+    add_new_sstr("cancer", "breast,cancer", ut.time_str("full"), "key_words")
     # add_new_task("cancer", "breast,cancer", "2017-10-10 10:10:10", 5000, 6, 0, 0)
     # finish_task("cancer", "breast,cancer")
     # print count_task("cancer", "breast,cancer")
@@ -231,4 +235,3 @@ if __name__ == "__main__":
     # print read_empty_pmid("organ on chip", 10000)
     # print read_content("cancer", "lung,cancer", 1)
     # pass
-    print read_journal_name_all()
