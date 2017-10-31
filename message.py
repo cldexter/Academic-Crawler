@@ -7,11 +7,6 @@
    Author: Dexter Chen
    Date：2017-09-19
 -------------------------------------------------
-   Development Note：
-   1. 处理信息，决定是否log
-   2. 根据显示模式，决定如何显示
-   3. 把需要显示的传递给输出screen，web
--------------------------------------------------
 
 """
 
@@ -19,56 +14,75 @@ import mongodb_handler as mh
 import screen
 import stats
 import utilities as ut
+import config
 
-display_protocol = 5 # 定义哪种显示方法
-log_protocol = 5 # 定义哪种记录方法
 
 def msg(who, identifier, action, result, info_type, *args):
     '''*args可以为log, display, stat一个或多个'''
     for fn in args:
         fn(ut.time_str("full"), who, identifier, action, result, info_type)
 
-    
-def log(when, who, identifier, action, result, info_type): # 用于日志的信息
-    if log_protocol == 9:
+
+def log(when, who, identifier, action, result, info_type):  # 用于日志的信息
+    if config.log_protocol == 9:
         mh.add_new_log(when, who, identifier, action, result, info_type)
-    elif log_protocol == 5 and info_type in ["important", "error", "notice", "debug", "info"]:
+    elif config.log_protocol == 5 and info_type in ["important", "error", "notice", "debug", "info"]:
         mh.add_new_log(when, who, identifier, action, result, info_type)
-    elif log_protocol == 4 and info_type in ["important", "error", "notice", "info"]:
+    elif config.log_protocol == 4 and info_type in ["important", "error", "notice", "info"]:
         mh.add_new_log(when, who, identifier, action, result, info_type)
-    elif log_protocol == 3 and info_type in ["important", "error", "notice"]:
+    elif config.log_protocol == 3 and info_type in ["important", "error", "notice"]:
         mh.add_new_log(when, who, identifier, action, result, info_type)
-    elif log_protocol == 2 and info_type in ["important", "error"]:
+    elif config.log_protocol == 2 and info_type in ["important", "error"]:
         mh.add_new_log(when, who, identifier, action, result, info_type)
-    elif log_protocol == 1 and info_type == "important":
+    elif config.log_protocol == 1 and info_type == "important":
         mh.add_new_log(when, who, identifier, action, result, info_type)
     else:
         pass
 
-def display(when, who, identifier, action, result, info_type): # 用于显示的信息
-    if display_protocol == 9:
-        screen.add_new_display(when, who, identifier, action, result, info_type)
-    elif display_protocol == 5 and info_type in ["important", "error", "notice", "debug", "info"]: 
-        screen.add_new_display(when, who, identifier, action, result, info_type)
-    elif display_protocol == 4 and info_type in ["important", "error", "notice", "info"]: 
-        screen.add_new_display(when, who, identifier, action, result, info_type)
-    elif display_protocol == 3 and info_type in ["important", "error", "notice"]: 
-        screen.add_new_display(when, who, identifier, action, result, info_type)
-    elif display_protocol == 2 and info_type in ["important", "error"]: # 只记录错误
-        screen.add_new_display(when, who, identifier, action, result, info_type)
-    elif display_protocol == 1 and info_type == "important":
-        screen.add_new_display(when, who, identifier, action, result, info_type)
+
+def display(when, who, identifier, action, result, info_type):  # 用于显示的信息
+    if config.display_protocol == 9:
+        screen.add_new_display(when, who, identifier,
+                               action, result, info_type)
+    elif config.display_protocol == 5 and info_type in ["important", "error", "notice", "debug", "info"]:
+        screen.add_new_display(when, who, identifier,
+                               action, result, info_type)
+    elif config.display_protocol == 4 and info_type in ["important", "error", "notice", "info"]:
+        screen.add_new_display(when, who, identifier,
+                               action, result, info_type)
+    elif config.display_protocol == 3 and info_type in ["important", "error", "notice"]:
+        screen.add_new_display(when, who, identifier,
+                               action, result, info_type)
+    # 只记录错误
+    elif config.display_protocol == 2 and info_type in ["important", "error"]:
+        screen.add_new_display(when, who, identifier,
+                               action, result, info_type)
+    elif config.display_protocol == 1 and info_type == "important":
+        screen.add_new_display(when, who, identifier,
+                               action, result, info_type)
     else:
         pass
 
-def stat(when, who, identifier, action, result, info_type): # 用于统计的信息
-    if result ==  "succ":
+
+def stat(when, who, identifier, action, result, info_type):  # 用于统计的信息
+    if result == "succ":
         if who == "sum page":
             stats.success_sum_page += 1
         elif who == "record":
             stats.success_record += 1
         elif who == "pmid":
             stats.success_pmid += 1
+            stats.c_skipped_pmid = 0
+        elif who == "crawl pmid":
+            if result == "started":
+                stats.crawl_pmid_start = ut.time_str("full")
+            elif result == "finished":
+                stats.crawl_pmid_finish = ut.time_str("full")
+        elif who == "crawl detail":
+            if result == "started":
+                stats.crawl_detail_start = ut.time_str("full")
+            if result == "finished":
+                stats.crawl_detail_finish = ut.time_str("full")
     elif result == "fail":
         if who == "sum page":
             stats.failed_sum_page += 1
@@ -90,6 +104,7 @@ def stat(when, who, identifier, action, result, info_type): # 用于统计的信
             stats.skipped_record += 1
         elif who == "pmid":
             stats.skipped_pmid += 1
+            stats.c_skipped_pmid += 1
 
 
 if __name__ == '__main__':

@@ -7,12 +7,6 @@
    Author: Dexter Chen
    Date：2017-09-16
 -------------------------------------------------
-   Development Note：
-   1.73个agents随便换
--------------------------------------------------
-   Change Log:
-   2018-09-17: 随机生成agent并返回
--------------------------------------------------
 """
 
 import random
@@ -112,4 +106,4 @@ def get_header():
     return HEADER
 
 if __name__ == '__main__':
-    print get_header()
+    pass

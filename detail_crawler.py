@@ -27,8 +27,8 @@ import config
 import dictionary
 
 
-def get_pmid_list(project, pmid_number):
-    pmid_list = mh.read_empty_pmid(project, pmid_number)
+def get_pmid_list(project, sstr, pmid_number):
+    pmid_list = mh.read_empty_pmid(project, sstr, pmid_number)
     return pmid_list
 
 
@@ -89,11 +89,11 @@ def crawl_detail(pmid, proxy=None):  # 爬具体页面
                     institues.append(institue)
                     institue = institue.replace(", ", ",").replace(".", "")
                     institue_strs = institue.split(",")
-                    institue_strs.reverse()
+                    institue_strs.reverse() # 国家名往往放在最后
                     i = 0
                     while i < len(institue_strs):
-                        if institue_strs[i] in dictionary.country_names.keys():
-                            country_name = dictionary.country_names[institue_strs[i]]
+                        if institue_strs[i] in dictionary.country_names.keys(): # 如果有这个机构
+                            country_name = dictionary.country_names[institue_strs[i]] # 直接查询
                             if not country_name in countries:
                                 countries.append(country_name)
                             break
@@ -119,16 +119,16 @@ def crawl_detail(pmid, proxy=None):  # 爬具体页面
     else:
         msg.msg("record", pmid, "retrieved", "fail",
                 "error", msg.display, msg.log)
-        return 0
+        return 0  
 
 
-def run_crawler_many(project, itemnum):
-    pmid_list = get_pmid_list(project, itemnum)
-    pool = Pool(config.detail_crawler_number)  # 进程池大小
+def run_detail_crawler(project, sstr, record_number):
+    pmid_list = get_pmid_list(project, sstr, record_number)
+    pool = Pool(config.detail_crawler_number)  # 实例化进程池
     pool.map(crawl_detail, pmid_list)
-    pool.close()
-    pool.join()
+    pool.close() # 关闭进程池
+    pool.join() # 等待所有进程结束
 
 
 if __name__ == '__main__':
-    run_crawler_many("organ on chip", 10000)
+    run_detail_crawler("cancer", "lung,cancer", 10000)

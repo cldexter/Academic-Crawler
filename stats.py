@@ -16,6 +16,9 @@
 -------------------------------------------------
 """
 
+import config
+
+
 processed_sum_page = 0
 processed_record = 0
 processed_pmid = 0
@@ -28,3 +31,32 @@ failed_pmid = 0
 skipped_sum_page = 0
 skipped_record = 0
 skipped_pmid = 0
+c_skipped_pmid = 0
+
+crawl_pmid_start = ""
+crawl_pmid_finish = ""
+crawl_detail_start = ""
+crawl_detail_finish = ""
+
+
+def last_task_duration(project, sstr):
+    pass
+
+def c_skipped_pmid_counter(result):
+    global c_skipped_pmid
+    if result == "skip":
+        c_skipped_pmid += 1
+    elif result == "succ":
+        c_skipped_pmid = 0
+    if c_skipped_pmid >= config.pmid_max_c_skip:
+        return False
+    else:
+        return True
+
+
+if __name__ == '__main__':
+    i = 0
+    while i < 5:
+        print c_skipped_pmid_counter("skip") 
+        i += 1
+    print c_skipped_pmid_counter("succ")

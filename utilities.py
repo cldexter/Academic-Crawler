@@ -7,16 +7,9 @@
    Author: Dexter Chen
    Date：2017-09-14
 -------------------------------------------------
-   Development Note：
-   1. 时间戳：统一用日期 + 时间的形式
-   2. 显示：屏幕只显示时间，不现实日期
--------------------------------------------------
-   Change Log:
-   2017-09-14: 复活，把operator改为handler
-   2017-09-17: 更新时间工具，可以计算后续多少小时
--------------------------------------------------
 """
 import sys
+import time
 import re
 import dictionary
 import datetime
@@ -26,15 +19,26 @@ from threading import Timer
 # 输出时间，带日期和不带; delta_hr 是往后数多少小时，负数往前数
 
 
-def time_str(type="full", delta_hr=0):
+def time_str(type="full", delta_min=0): # 自然时间的时间戳
     if type == "full":  # 完整时间
         time_format = '%Y-%m-%d %X'
     if type == "time":  # 只有时间
         time_format = "%X"
     time_str = datetime.datetime.now()
-    time = time_str + datetime.timedelta(hours=delta_hr)
+    time = time_str + datetime.timedelta(minutes=delta_min)
     return time.strftime(time_format)
 
+
+def time_object(time_str):
+    return time.strptime(time_str, "%Y-%m-%d %X")
+
+
+def str_duration(early_time_str, late_time_str): # 计算两个时间str之间的时间差，默认输出h，也可输出min
+    early_time_object = datetime.datetime.strptime(early_time_str, "%Y-%m-%d %X")
+    late_time_object = datetime.datetime.strptime(late_time_str, "%Y-%m-%d %X")
+    duration_delta = late_time_object - early_time_object
+    duration_in_seconds = int(duration_delta.total_seconds())
+    return duration_in_seconds
 
 # 用于根据字典文件替换
 re_dict = dictionary.replace_dict
@@ -66,35 +70,7 @@ def cur_file_dir():  # 获取脚本路径
     return path
 
 
-class Watchdog:  # 看门狗程序，防止运行卡死
-    def __init__(self):
-        ''' Class constructor. The "time" argument has the units of seconds. '''
-        self._time = maxPorcessTime
-        return
-
-    def StartWatchdog(self):
-        ''' Starts the watchdog timer. '''
-        self._timer = Timer(self._time, self._WatchdogEvent)
-        self._timer.daemon = True
-        self._timer.start()
-        return
-
-    def PetWatchdog(self):
-        ''' Reset watchdog timer. '''
-        self.StopWatchdog()
-        self.StartWatchdog()
-        return
-
-    def _WatchdogEvent(self):
-        cPrint(u'\n ●调 等待太久，程序强制跳过 \n', COLOR.RED)
-        self.StopWatchdog()
-        thread.interrupt_main()
-        return
-
-    def StopWatchdog(self):
-        ''' Stops the watchdog timer. '''
-        self._timer.cancel()
-
-
 if __name__ == '__main__':
+    print str_duration("2010-10-10 10:10:10", "2010-10-10 11:10:10")
     print time_str("full")
+    print time_str("full", 30)

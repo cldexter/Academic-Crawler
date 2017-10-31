@@ -46,30 +46,32 @@ def add_record(data, data_type):
 
 
 # 对杂志的操作
-def read_journal_name_all(): # 读取普通名
+def read_journal_name_all():  # 读取普通名
     journals = []
     for record in get_db("journal").find():
         journals.append(record['journal'])
     return journals
 
-def read_ojournal_name_all(): # 读取正式名称（必须是网络返回的，全大写，清洗过后的）
+
+def read_ojournal_name_all():  # 读取正式名称（必须是网络返回的，全大写，清洗过后的）
     ojournals = []
     for record in get_db('journal').find():
         ojournals.append(record['ojournal'])
     return ojournals
 
 
-def read_journal_detail(journal_name): # 使用普通名查询论文
+def read_journal_detail(journal_name):  # 使用普通名查询论文
     record = get_db("journal").find_one({"journal": journal_name})
     if record:
         data = record['journal'], record['ojournal'], record['if'], record['jzone']
-    return data
+        return data
 
-def read_ojournal_detail(ojournal_name): # 使用正式名称查询论文
+
+def read_ojournal_detail(ojournal_name):  # 使用正式名称查询论文
     record = get_db("journal").find_one({"ojournal": ojournal_name})
     if record:
         data = record['journal'], record['ojournal'], record['if'], record['jzone']
-    return data
+        return data
 
 
 def add_journal(journal_name, ojournal_name, impact_factor, journal_zone):
@@ -92,7 +94,7 @@ def add_new_pmid(project, sstr, ctime, source, pmid):  # 第一轮只抓取pmid�
     get_db("content").insert_one(data)
 
 
-def add_new_pmid_all(project, sstr, ctime, source, pmid_list):  # 同时生成多个pmid记录
+def add_new_pmid_many(project, sstr, ctime, source, pmid_list):  # 同时生成多个pmid记录
     data_list = []
     for pmid in pmid_list:
         data = {"project": project, "sstr": sstr, "ctime": ctime,
@@ -101,9 +103,9 @@ def add_new_pmid_all(project, sstr, ctime, source, pmid_list):  # 同时生成�
     get_db("content").insert_many(data_list)
 
 
-def read_empty_pmid(project, pmid_number):  # 读取只有pmid，无内容的pmid以供抓取
+def read_empty_pmid(project, sstr, pmid_number):  # 读取只有pmid，无内容的pmid以供抓取
     pmids = []
-    for record in get_db("content").find({"project": project, "status": 1}).limit(pmid_number):
+    for record in get_db("content").find({"project": project, "sstr": sstr, "status": 1}).limit(pmid_number):
         pmids.append(record['pmid'])
     return pmids
 
@@ -122,7 +124,7 @@ def add_new_comments(pmid, quality, usefulness, highlight, comment):  # 实际�
 
 def read_content(project, sstr, number):
     content = []
-    for record in get_db("content").find({"project":project, "sstr":sstr}).limit(number):
+    for record in get_db("content").find({"project": project, "sstr": sstr}).limit(number):
         content.append(record)
     return content
 
@@ -133,7 +135,8 @@ def del_content(pmid):
 
 # 对log做制定操作
 def add_new_log(when, who, identifier, action, result, info_type):
-    data = {"ctime": when, "who": who, "identifier": identifier, "action": action, "result": result, "info_type": info_type}
+    data = {"ctime": when, "who": who, "identifier": identifier,
+            "action": action, "result": result, "info_type": info_type}
     get_db('log').insert_one(data)
 
 
@@ -225,5 +228,7 @@ if __name__ == "__main__":
     # finish_task("cancer", "breast,cancer")
     # print count_task("cancer", "breast,cancer")
     # add_new_pmid("cancer", "lung,cancer", "2017-10-10 10:10:10", "pm", 29027110)
-    # print read_empty_pmid("cancer", 10)
-    print read_content("cancer", "lung,cancer", 1)
+    # print read_empty_pmid("organ on chip", 10000)
+    # print read_content("cancer", "lung,cancer", 1)
+    # pass
+    print read_journal_name_all()
