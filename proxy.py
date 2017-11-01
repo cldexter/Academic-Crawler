@@ -36,8 +36,6 @@ def is_usable(proxy_record):  # 检测是否还能那个用
 def update_pool(proxy_pool):
     if len(proxy_pool):
         proxy_pool = filter(is_usable, proxy_pool)
-    else:
-
     if len(proxy_pool) < config.proxy_pool_size:
         retrieve_proxy(proxy_pool_size - len(proxy_pool))  # 缺多少，补多少
     proxy_pool = sorted(proxy_pool, key=lambda x: x[2])  # 按照使用次数排序，用的最少的最先用
@@ -59,5 +57,4 @@ def get_proxy():  # 这里是在程序中获得proxy
 
 
 if __name__ == '__main__':
-    retrieve_proxy(1)
-    print proxy_pool
+    print retrieve_proxy(1)

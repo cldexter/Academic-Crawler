@@ -7,13 +7,6 @@
    Author: Dexter Chen
    Date：2017-09-19
 -------------------------------------------------
-   Development Note：
-   1. 根据log，生成统计文件
-   2. 对关键词等信息
--------------------------------------------------
-   Change Log:
-   2018-08-31: 
--------------------------------------------------
 """
 
 import config
@@ -42,21 +35,6 @@ crawl_detail_finish = ""
 def last_task_duration(project, sstr):
     pass
 
-def c_skipped_pmid_counter(result):
-    global c_skipped_pmid
-    if result == "skip":
-        c_skipped_pmid += 1
-    elif result == "succ":
-        c_skipped_pmid = 0
-    if c_skipped_pmid >= config.pmid_max_c_skip:
-        return False
-    else:
-        return True
-
 
 if __name__ == '__main__':
-    i = 0
-    while i < 5:
-        print c_skipped_pmid_counter("skip") 
-        i += 1
-    print c_skipped_pmid_counter("succ")
+    pass

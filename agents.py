@@ -90,15 +90,17 @@ USER_AGENTS = [
 ]
 
 HEADER = {
-    'User-Agent':"random.choice(USER_AGENTS)",
+    'User-Agent':"",
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     'Accept-Language': 'en-US,en;q=0.5',
     'Connection': 'keep-alive',
-    'Accept-Encoding': 'gzip, deflate',
+    'Accept-Encoding': 'br, gzip, deflate',
     "Upgrade-Insecure-Requests": "1",
     "Cache-Control": "no-cache",
     "Connection": "keep-alive",
     "Pragma": "max-age=0",
+    'Referer': 'http://www.ncbi.nlm.nih.gov',
+    "Host": "www.ncbi.nlm.nih.gov"
 }
 
 def get_header():
