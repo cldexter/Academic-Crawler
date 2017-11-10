@@ -168,6 +168,7 @@ def crawl_phantom(project, sstr, record_number, endwith, endtime):
         # executable_path=path, desired_capabilities=dcap, service_args=sargs)  # 加载浏览器
         executable_path=path, desired_capabilities=dcap)  # 加载浏览器
     browser.set_page_load_timeout(config.phantom_time_out)  # 设定网页加载超时,超过了就不加载
+    browser.set_window_size(1024, 768)
     while (tries_1st_sp > 0):
         try:
             browser.get(url)  # 打开链接
@@ -194,7 +195,6 @@ def crawl_phantom(project, sstr, record_number, endwith, endtime):
                     "info", msg.log, msg.display, msg.stat)
             rest_page_number -= 1
             # dc.run_detail_crawler(project, sstr, 200)
-            # time.sleep(config.phantom_sp_wait)
             break
         except Exception as e:
             tries_1st_sp -= 1
@@ -214,32 +214,40 @@ def crawl_phantom(project, sstr, record_number, endwith, endtime):
     while(rest_page_number > 0 and tries_1st_sp > 0 and task_validator(project, sstr, endwith, endtime)):
         tries_other_sp = config.phantom_other_sp_tries
         while(tries_other_sp > 0):  # 尝试多少次，默认尝试3次，不行就打不开
-            try:
-                browser.find_element_by_link_text(
-                    "Next >").click()  # 直接就点开“下一页”，从第二页开始
-                WebDriverWait(browser, config.phantom_time_out).until(
-                    EC.presence_of_element_located((By.ID, "footer")))
-                msg.msg("sum page", str(stats.processed_sum_page),
-                        "loaded", "proc", "info", msg.display, msg.stat)
-                pmid_list = extract_new_pmid(browser.page_source)
-                if pmid_list:  # 防止空（所有pmid都被跳过了）
-                    mh.add_new_pmid_many(
-                        project, sstr, ut.time_str("full"), "pm", pmid_list)
-                msg.msg("sum page", str(stats.processed_sum_page),
-                        "loaded", "succ", "info", msg.log, msg.display, msg.stat)
-                rest_page_number -= 1
-                # time.sleep(config.phantom_sp_wait)
-                # dc.run_detail_crawler(project, sstr, 200)
-                break
-            except Exception as e:
-                tries_other_sp -= 1
-                # time.sleep(config.phantom_refresh_wait)
-                browser.refresh()
-                browser.implicitly_wait(config.phantom_refresh_wait)
-                msg.msg("sum page", str(stats.processed_sum_page),
-                        "loaded", "retried", "notice", msg.display)
-                msg.msg("sum page", str(stats.processed_sum_page),
-                        "loaded", str(e), "error", msg.log)
+            # try:
+            WebDriverWait(browser, config.phantom_time_out).until(
+                EC.presence_of_element_located((By.ID, "footer")))
+            # browser.find_element_by_partial_link_text(
+            #     "Next >").click()  # 直接就点开“下一页”，从第二页开始
+            input_span = browser.find_element_by_name(
+                "EntrezSystem2.PEntrez.PubMed.Pubmed_ResultsPanel.Pubmed_Pager.cPage") # 直接就点开“下一页”，从第二页开始
+            input_span.send_keys(stats.processed_sum_page + 1)
+            print "filled"
+            save_png(browser)
+            WebDriverWait(browser, config.phantom_time_out).until(
+                EC.presence_of_element_located((By.ID, "footer")))
+            js="document.documentElement.scrollTop=10000"
+            browser.execute_script(js)
+            # msg.msg("sum page", str(stats.processed_sum_page),
+            #         "loaded", "proc", "info", msg.display, msg.stat)
+            pmid_list = extract_new_pmid(browser.page_source)
+            if pmid_list:  # 防止空（所有pmid都被跳过了）
+                mh.add_new_pmid_many(
+                    project, sstr, ut.time_str("full"), "pm", pmid_list)
+            # msg.msg("sum page", str(stats.processed_sum_page),
+            #         "loaded", "succ", "info", msg.log, msg.display, msg.stat)
+            rest_page_number -= 1
+            # dc.run_detail_crawler(project, sstr, 200)
+            break
+            # except Exception as e:
+            #     tries_other_sp -= 1
+            #     # time.sleep(config.phantom_refresh_wait)
+            #     browser.refresh()
+            #     browser.implicitly_wait(config.phantom_refresh_wait)
+            #     msg.msg("sum page", str(stats.processed_sum_page),
+            #             "loaded", "retried", "notice", msg.display)
+            #     msg.msg("sum page", str(stats.processed_sum_page),
+            #             "loaded", str(e), "error", msg.log)
         else:
             msg.msg("sum page", str(stats.processed_sum_page),
                     "loaded", "fail", "error", msg.log, msg.display)
