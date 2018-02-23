@@ -131,4 +131,4 @@ def run_detail_crawler(project, sstr, record_number):
 
 
 if __name__ == '__main__':
-    run_detail_crawler("lab on chip", "organ,on,chip", 10000)
+    run_detail_crawler("test", "lactobacillus", 1000)

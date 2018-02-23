@@ -185,4 +185,5 @@ def journal_detail(journal_name):
 
 
 if __name__ == '__main__':
-    print journal_detail("nature protocols:")
+    # print journal_detail("nature protocols:")
+    print get_official_name("OBSTETRICS AND GYNECOLOGY")

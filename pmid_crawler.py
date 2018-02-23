@@ -164,30 +164,34 @@ def crawl_phantom(project, sstr, record_number, endwith, endtime):
     sargs = ["--disk-cache=yes", '--ignore-ssl-errors=true']  # 打开磁盘缓存，忽略ssl错误
     # browser = webdriver.PhantomJS(executable_path='C:\Python27\Scripts\phantomjs.exe', desired_capabilities=dcap)  # 加载浏览器，windows下使用
     path = ut.cur_file_dir() + "/browser/phantomjs"  # 浏览器地址
-    browser = webdriver.PhantomJS(
+    pm_browser = webdriver.PhantomJS(
         # executable_path=path, desired_capabilities=dcap, service_args=sargs)  # 加载浏览器
         executable_path=path, desired_capabilities=dcap)  # 加载浏览器
+<<<<<<< Updated upstream
     browser.set_page_load_timeout(config.phantom_time_out)  # 设定网页加载超时,超过了就不加载
     browser.set_window_size(1024, 768)
+=======
+    pm_browser.set_page_load_timeout(config.phantom_time_out)  # 设定网页加载超时,超过了就不加载
+>>>>>>> Stashed changes
     while (tries_1st_sp > 0):
         try:
-            browser.get(url)  # 打开链接
-            browser.implicitly_wait(5)
+            pm_browser.get(url)  # 打开链接
+            pm_browser.implicitly_wait(5)
             msg.msg("sum page", "1", "loaded", "proc",
                     "info", msg.display, msg.stat)
-            WebDriverWait(browser, config.phantom_time_out).until(
+            WebDriverWait(pm_browser, config.phantom_time_out).until(
                 EC.presence_of_element_located((By.ID, "footer")))  # 等待加载完毕的最好方案
-            browser.find_elements_by_name("Display")[2].click()  # 找到下拉菜单，点击
-            browser.implicitly_wait(5)  # 等0.5秒钟，让菜单下拉完成
+            pm_browser.find_elements_by_name("Display")[2].click()  # 找到下拉菜单，点击
+            pm_browser.implicitly_wait(5)  # 等0.5秒钟，让菜单下拉完成
             time.sleep(2)
-            browser.find_element_by_xpath(
+            pm_browser.find_element_by_xpath(
                 "//*[@id=\"ps200\"]").click()  # 下拉菜单找到200这个值，点击
-            WebDriverWait(browser, config.phantom_time_out).until(
+            WebDriverWait(pm_browser, config.phantom_time_out).until(
                 EC.presence_of_element_located((By.ID, "footer")))  # 自动刷新页面, 等待刷新完毕
             msg.msg("sum page", "1", "display number",
                     "clicked", "debug", msg.display, msg.log)
-            browser.implicitly_wait(5)
-            pmid_list = extract_new_pmid(browser.page_source)
+            pm_browser.implicitly_wait(5)
+            pmid_list = extract_new_pmid(pm_browser.page_source)
             if pmid_list:
                 mh.add_new_pmid_many(project, sstr, ut.time_str(
                     "full"), "pm", pmid_list)  # 把pmid存起来
@@ -199,8 +203,8 @@ def crawl_phantom(project, sstr, record_number, endwith, endtime):
         except Exception as e:
             tries_1st_sp -= 1
             # time.sleep(config.phantom_refresh_wait)
-            browser.refresh()
-            browser.implicitly_wait(config.phantom_refresh_wait)
+            pm_browser.refresh()
+            pm_browser.implicitly_wait(config.phantom_refresh_wait)
             msg.msg("sum page", "1", "loaded",
                     "retried", "notice", msg.display)
             msg.msg("sum page", "1", "loaded", str(e), "error", msg.log)
@@ -209,12 +213,14 @@ def crawl_phantom(project, sstr, record_number, endwith, endtime):
                 "error", msg.log, msg.display)
         msg.msg("crawl pmid", project + sstr, "finished",
                 "fail", "important", msg.display, msg.log)
-        browser.quit()  # 当出现异常时记得在任务浏览器中关闭PhantomJS
+        pm_browser.quit()  # 当出现异常时记得在任务浏览器中关闭PhantomJS
     # 确认需要第二页，如果sum-page只有1页，那就不用再打开; 如果第一页打开失败，也不用打开；从这里开始循环，直到所有的页面都爬完为止
-    while(rest_page_number > 0 and tries_1st_sp > 0 and task_validator(project, sstr, endwith, endtime)):
+    # while(rest_page_number > 0 and tries_1st_sp > 0 and task_validator(project, sstr, endwith, endtime)):
+    while(rest_page_number > 0 and tries_1st_sp > 0):        
         tries_other_sp = config.phantom_other_sp_tries
         while(tries_other_sp > 0):  # 尝试多少次，默认尝试3次，不行就打不开
             # try:
+<<<<<<< Updated upstream
             WebDriverWait(browser, config.phantom_time_out).until(
                 EC.presence_of_element_located((By.ID, "footer")))
             # browser.find_element_by_partial_link_text(
@@ -237,13 +243,36 @@ def crawl_phantom(project, sstr, record_number, endwith, endtime):
             # msg.msg("sum page", str(stats.processed_sum_page),
             #         "loaded", "succ", "info", msg.log, msg.display, msg.stat)
             rest_page_number -= 1
+=======
+            pm_browser.find_element_by_link_text(
+                "Next >").click()  # 直接就点开“下一页”，从第二页开始
+            WebDriverWait(pm_browser, config.phantom_time_out).until(
+                EC.presence_of_element_located((By.ID, "footer")))
+            msg.msg("sum page", str(stats.processed_sum_page),
+                    "loaded", "proc", "info", msg.display, msg.stat)
+            pmid_list = extract_new_pmid(pm_browser.page_source)
+            if pmid_list:  # 防止空（所有pmid都被跳过了）
+                mh.add_new_pmid_many(
+                    project, sstr, ut.time_str("full"), "pm", pmid_list)
+            msg.msg("sum page", str(stats.processed_sum_page),
+                    "loaded", "succ", "info", msg.log, msg.display, msg.stat)
+            rest_page_number -= 1
+            save_png(pm_browser)
+            # time.sleep(config.phantom_sp_wait)
+>>>>>>> Stashed changes
             # dc.run_detail_crawler(project, sstr, 200)
             break
             # except Exception as e:
             #     tries_other_sp -= 1
+<<<<<<< Updated upstream
             #     # time.sleep(config.phantom_refresh_wait)
             #     browser.refresh()
             #     browser.implicitly_wait(config.phantom_refresh_wait)
+=======
+            #     time.sleep(config.phantom_refresh_wait)
+            #     pm_browser.refresh()
+            #     pm_browser.implicitly_wait(config.phantom_refresh_wait)
+>>>>>>> Stashed changes
             #     msg.msg("sum page", str(stats.processed_sum_page),
             #             "loaded", "retried", "notice", msg.display)
             #     msg.msg("sum page", str(stats.processed_sum_page),
@@ -254,7 +283,7 @@ def crawl_phantom(project, sstr, record_number, endwith, endtime):
             msg.msg("crawl pmid", project + sstr, "finished",
                     "fail", "important", msg.display, msg.log)
             break
-        browser.quit()  # 关闭浏览器。
+        pm_browser.quit()  # 关闭浏览器。
 
 
 def run_pmid_crawler(project, sstr, record_number, endwith, endtime):
